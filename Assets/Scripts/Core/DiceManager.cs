@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using DiceMadness.Dice;
@@ -11,6 +12,18 @@ namespace DiceMadness.Core
 {
     public class DiceManager : MonoBehaviour
     {
+        public readonly struct RollOutcome
+        {
+            public readonly int[] Values;
+            public readonly int Total;
+
+            public RollOutcome(int[] values, int total)
+            {
+                Values = values;
+                Total = total;
+            }
+        }
+
         // Coordinates weighted outcome selection, roll animation, evaluation motion, and the on-screen result text.
         [SerializeField] private DiceRoller[] dice;
         [SerializeField] private TMP_Text resultText;
@@ -23,6 +36,10 @@ namespace DiceMadness.Core
         private Vector3[] startPositions;
         private bool isRolling;
         private bool allowRollInput = true;
+
+        public event Action<RollOutcome> RollResolved;
+
+        public bool IsRolling => isRolling;
 
         private void Awake()
         {
@@ -65,6 +82,14 @@ namespace DiceMadness.Core
             allowRollInput = enabled;
         }
 
+        public void SetResultSummaryText(string summary)
+        {
+            if (resultText != null)
+            {
+                resultText.text = summary;
+            }
+        }
+
         // Restores the tray setup so a new round starts from a clean baseline.
         public void ResetRoundState()
         {
@@ -79,7 +104,7 @@ namespace DiceMadness.Core
                     continue;
                 }
 
-                dice[i].ResetToAnchor(startPositions[i], Random.rotationUniform);
+                dice[i].ResetToAnchor(startPositions[i], UnityEngine.Random.rotationUniform);
             }
 
             ShowIdleText();
@@ -130,8 +155,10 @@ namespace DiceMadness.Core
             }
 
             int[] physicalValues = ReadValues();
+            int total = SumValues(physicalValues);
             yield return PresentDiceForEvaluation();
-            ShowResults(physicalValues);
+            ShowResults(physicalValues, total);
+            RollResolved?.Invoke(new RollOutcome(physicalValues, total));
             isRolling = false;
         }
 
@@ -259,15 +286,8 @@ namespace DiceMadness.Core
             }
         }
 
-        private void ShowResults(int[] values)
+        private void ShowResults(int[] values, int total)
         {
-            int total = 0;
-
-            for (int i = 0; i < values.Length; i++)
-            {
-                total += values[i];
-            }
-
             if (resultText == null)
             {
                 return;
@@ -301,21 +321,19 @@ namespace DiceMadness.Core
 
         private static bool WasRollPressed()
         {
-#if ENABLE_INPUT_SYSTEM
-            if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
-            {
-                return true;
-            }
-#endif
+            return GameSettingsService.WasRollPressed();
+        }
 
-#if ENABLE_LEGACY_INPUT_MANAGER
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                return true;
-            }
-#endif
+        private static int SumValues(int[] values)
+        {
+            int total = 0;
 
-            return false;
+            for (int i = 0; i < values.Length; i++)
+            {
+                total += values[i];
+            }
+
+            return total;
         }
     }
 }

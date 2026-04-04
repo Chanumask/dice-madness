@@ -1,4 +1,5 @@
 using DiceMadness.Core;
+using DiceMadness.UI;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -31,13 +32,27 @@ public static class PrototypeMenuSceneBuilder
     private const int ButtonFontSize = 32;
     private const int TabButtonFontSize = 24;
     private const int UtilityButtonFontSize = 26;
+    private const float MainMenuCardAspectRatio = 0.86f;
+    private const float ScreenCardAspectRatio = 1.24f;
+    private const float MainMenuCardWidthPercent = 0.5f;
+    private const float ScreenCardWidthPercent = 0.68f;
+    private const float MainMenuCardMaxHeightPercent = 0.9f;
+    private const float ScreenCardMaxHeightPercent = 0.86f;
+    private const float MainMenuCardMinWidth = 720f;
+    private const float MainMenuCardMaxWidth = 920f;
+    private const float ScreenCardMinWidth = 860f;
+    private const float ScreenCardMaxWidth = 1180f;
+    private const int MainMenuPadding = 44;
+    private const int MainMenuSpacing = 18;
+    private const int MainMenuInnerPadding = 18;
+    private const int MainMenuActionSpacing = 12;
+    private const float MainMenuButtonHeight = 78f;
+    private const float MainMenuTitleHeight = 96f;
+    private const float MainMenuSubtitleHeight = 88f;
+    private const float MainMenuHintHeight = 42f;
 
-    private static readonly Vector2 MainMenuCardAnchorMin = new Vector2(0.26f, 0.11f);
-    private static readonly Vector2 MainMenuCardAnchorMax = new Vector2(0.74f, 0.89f);
-    private static readonly Vector2 ScreenCardAnchorMin = new Vector2(0.11f, 0.08f);
-    private static readonly Vector2 ScreenCardAnchorMax = new Vector2(0.89f, 0.92f);
-    private static readonly Vector2 UtilityBarAnchorMin = new Vector2(0.28f, 1f);
-    private static readonly Vector2 UtilityBarAnchorMax = new Vector2(0.72f, 1f);
+    private static readonly Vector2 UtilityBarAnchorMin = new Vector2(0.14f, 1f);
+    private static readonly Vector2 UtilityBarAnchorMax = new Vector2(0.86f, 1f);
 
     private static readonly Color ScreenOverlayColor = new Color(0.03f, 0.05f, 0.08f, 0.82f);
     private static readonly Color CardColor = new Color(0.10f, 0.13f, 0.17f, 0.97f);
@@ -58,6 +73,16 @@ public static class PrototypeMenuSceneBuilder
         public Canvas canvas;
         public EventSystem eventSystem;
         public TMP_Text rollText;
+        public TMP_Text scoreText;
+        public TMP_Text coinsText;
+        public TMP_Text shardsText;
+        public GameObject roundInfoPanel;
+        public TMP_Text roundInfoTitleText;
+        public TMP_Text roundInfoText;
+        public Button roundInfoScoringButton;
+        public Button roundInfoCoinsButton;
+        public Button roundInfoActiveEffectsButton;
+        public Button roundInfoRunInfoButton;
         public GameObject mainMenuPanel;
         public GameObject shopPanel;
         public GameObject challengesPanel;
@@ -71,15 +96,37 @@ public static class PrototypeMenuSceneBuilder
         public Button shopEfficiencyButton;
         public Button shopScoreMultipliersButton;
         public Button shopReturnButton;
+        public Button shopResetTabButton;
         public TMP_Text shopContextText;
         public TMP_Text shopSectionTitleText;
         public TMP_Text shopContentText;
+        public RectTransform shopTreeRoot;
+        public UiTooltipPresenter shopTooltipPresenter;
         public Button challengesBackButton;
         public TMP_Text challengesContentText;
         public Button settingsBackButton;
         public TMP_Text settingsContentText;
+        public CanvasScaler canvasScaler;
+        public TMP_Text rollKeyValueText;
+        public Button rollKeyRebindButton;
+        public TMP_Text backKeyValueText;
+        public Button backKeyRebindButton;
+        public TMP_Dropdown resolutionDropdown;
+        public TMP_Dropdown displayModeDropdown;
+        public Toggle vSyncToggle;
+        public Slider masterVolumeSlider;
+        public TMP_Text masterVolumeValueText;
+        public Slider musicVolumeSlider;
+        public TMP_Text musicVolumeValueText;
+        public Slider sfxVolumeSlider;
+        public TMP_Text sfxVolumeValueText;
+        public Slider uiScaleSlider;
+        public TMP_Text uiScaleValueText;
+        public Toggle detailedRollBreakdownToggle;
         public Button roundChallengesButton;
         public Button roundSettingsButton;
+        public Button roundSpendCoinsButton;
+        public Button roundCashOutButton;
         public Button roundMainMenuButton;
     }
 
@@ -92,6 +139,8 @@ public static class PrototypeMenuSceneBuilder
         Body,
         ButtonLabel,
         UtilityLabel,
+        HudResource,
+        HudScore,
         RollResult,
         SupportingHint,
     }
@@ -265,7 +314,21 @@ public static class PrototypeMenuSceneBuilder
         ApplyStyleToNamedText(root, "ShopSectionTitleText", fontAsset, TextRole.CardTitle);
         ApplyStyleToNamedText(root, "ShopContentText", fontAsset, TextRole.Body);
         ApplyStyleToNamedText(root, "ChallengesContentText", fontAsset, TextRole.Body);
-        ApplyStyleToNamedText(root, "SettingsContentText", fontAsset, TextRole.Body);
+        ApplyStyleToNamedText(root, "SettingsContentText", fontAsset, TextRole.SupportingHint);
+        ApplyStyleToNamedText(root, "SettingsSectionTitleText", fontAsset, TextRole.CardTitle);
+        ApplyStyleToNamedText(root, "SettingsFieldLabelText", fontAsset, TextRole.Body);
+        ApplyStyleToNamedText(root, "DropdownArrowText", fontAsset, TextRole.ButtonLabel);
+        ApplyStyleToNamedText(root, "RollKeyValueText", fontAsset, TextRole.Subtitle, AccentTextColor);
+        ApplyStyleToNamedText(root, "BackKeyValueText", fontAsset, TextRole.Subtitle, AccentTextColor);
+        ApplyStyleToNamedText(root, "MasterVolumeValueText", fontAsset, TextRole.Subtitle, AccentTextColor);
+        ApplyStyleToNamedText(root, "MusicVolumeValueText", fontAsset, TextRole.Subtitle, AccentTextColor);
+        ApplyStyleToNamedText(root, "SfxVolumeValueText", fontAsset, TextRole.Subtitle, AccentTextColor);
+        ApplyStyleToNamedText(root, "UiScaleValueText", fontAsset, TextRole.Subtitle, AccentTextColor);
+        ApplyStyleToNamedText(root, "ShardsText", fontAsset, TextRole.HudResource, AccentTextColor);
+        ApplyStyleToNamedText(root, "CoinsText", fontAsset, TextRole.HudResource);
+        ApplyStyleToNamedText(root, "ScoreText", fontAsset, TextRole.HudScore);
+        ApplyStyleToNamedText(root, "RoundInfoTitleText", fontAsset, TextRole.CardTitle);
+        ApplyStyleToNamedText(root, "RoundInfoText", fontAsset, TextRole.Body);
         ApplyStyleToNamedText(root, "FutureText", fontAsset, TextRole.SupportingHint);
         ApplyStyleToNamedText(root, "RollText", fontAsset, TextRole.RollResult);
 
@@ -279,9 +342,17 @@ public static class PrototypeMenuSceneBuilder
         ApplyButtonLabelStyle(root, "ShopBackButton", fontAsset, TextRole.ButtonLabel);
         ApplyButtonLabelStyle(root, "ChallengesBackButton", fontAsset, TextRole.ButtonLabel);
         ApplyButtonLabelStyle(root, "SettingsBackButton", fontAsset, TextRole.ButtonLabel);
+        ApplyButtonLabelStyle(root, "RollKeyRebindButton", fontAsset, TextRole.ButtonLabel, 22);
+        ApplyButtonLabelStyle(root, "BackKeyRebindButton", fontAsset, TextRole.ButtonLabel, 22);
         ApplyButtonLabelStyle(root, "RoundChallengesButton", fontAsset, TextRole.UtilityLabel);
         ApplyButtonLabelStyle(root, "RoundSettingsButton", fontAsset, TextRole.UtilityLabel);
+        ApplyButtonLabelStyle(root, "RoundSpendCoinsButton", fontAsset, TextRole.UtilityLabel);
+        ApplyButtonLabelStyle(root, "RoundCashOutButton", fontAsset, TextRole.UtilityLabel);
         ApplyButtonLabelStyle(root, "RoundMainMenuButton", fontAsset, TextRole.UtilityLabel);
+        ApplyButtonLabelStyle(root, "RoundInfoScoringButton", fontAsset, TextRole.ButtonLabel, 12);
+        ApplyButtonLabelStyle(root, "RoundInfoCoinsButton", fontAsset, TextRole.ButtonLabel, 12);
+        ApplyButtonLabelStyle(root, "RoundInfoActiveEffectsButton", fontAsset, TextRole.ButtonLabel, 12);
+        ApplyButtonLabelStyle(root, "RoundInfoRunInfoButton", fontAsset, TextRole.ButtonLabel, 12);
 
         EditorSceneManager.MarkSceneDirty(canvas.gameObject.scene);
         EditorSceneManager.SaveScene(canvas.gameObject.scene);
@@ -327,7 +398,9 @@ public static class PrototypeMenuSceneBuilder
         ApplySurfaceStyleInContainer(root, "ShopPanel", "ShopContentCard", SurfaceRole.InsetCard);
         ApplySurfaceStyleInContainer(root, "ChallengesPanel", "ChallengesContentCard", SurfaceRole.InsetCard);
         ApplySurfaceStyleInContainer(root, "SettingsPanel", "SettingsContentCard", SurfaceRole.InsetCard);
+        ApplySurfaceStyleToNamedObject(root, "RoundInfoContentCard", SurfaceRole.InsetCard);
         ApplySurfaceStyleToNamedObject(root, "RoundUtilityBar", SurfaceRole.UtilityBar);
+        ApplySurfaceStyleToNamedObject(root, "RoundInfoPanel", SurfaceRole.Card);
 
         ApplyButtonStyleByName(root, "PlayButton", ButtonRole.Primary);
         ApplyButtonStyleByName(root, "ShopButton", ButtonRole.Secondary);
@@ -341,7 +414,13 @@ public static class PrototypeMenuSceneBuilder
         ApplyButtonStyleByName(root, "SettingsBackButton", ButtonRole.Secondary);
         ApplyButtonStyleByName(root, "RoundChallengesButton", ButtonRole.Secondary);
         ApplyButtonStyleByName(root, "RoundSettingsButton", ButtonRole.Secondary);
+        ApplyButtonStyleByName(root, "RoundSpendCoinsButton", ButtonRole.Secondary);
+        ApplyButtonStyleByName(root, "RoundCashOutButton", ButtonRole.Primary);
         ApplyButtonStyleByName(root, "RoundMainMenuButton", ButtonRole.Secondary);
+        ApplyButtonStyleByName(root, "RoundInfoScoringButton", ButtonRole.Secondary);
+        ApplyButtonStyleByName(root, "RoundInfoCoinsButton", ButtonRole.Secondary);
+        ApplyButtonStyleByName(root, "RoundInfoActiveEffectsButton", ButtonRole.Secondary);
+        ApplyButtonStyleByName(root, "RoundInfoRunInfoButton", ButtonRole.Secondary);
 
         ApplyDividerStyle(root);
 
@@ -365,6 +444,8 @@ public static class PrototypeMenuSceneBuilder
             canvas = CreateCanvas();
         }
 
+        ApplyCanvasScalerSettings(canvas);
+
         TMP_FontAsset fontAsset = EnsureMenuFontAsset();
         EventSystem eventSystem = EnsureEventSystem();
         ClearLegacyUi(canvas.transform);
@@ -373,6 +454,7 @@ public static class PrototypeMenuSceneBuilder
         {
             canvas = canvas,
             eventSystem = eventSystem,
+            canvasScaler = canvas.GetComponent<CanvasScaler>(),
         };
 
         BuildSceneUi(canvas.transform, uiRefs, fontAsset);
@@ -401,12 +483,21 @@ public static class PrototypeMenuSceneBuilder
         Canvas canvas = canvasObject.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
+        ApplyCanvasScalerSettings(canvas);
+        return canvas;
+    }
+
+    private static void ApplyCanvasScalerSettings(Canvas canvas)
+    {
+        if (canvas == null)
+        {
+            return;
+        }
+
+        CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920f, 1080f);
         scaler.matchWidthOrHeight = 0.5f;
-
-        return canvas;
     }
 
     private static TMP_FontAsset EnsureMenuFontAsset()
@@ -533,69 +624,126 @@ public static class PrototypeMenuSceneBuilder
         refs.challengesPanel = CreateChallengesPanel(root, refs, fontAsset);
         refs.settingsPanel = CreateSettingsPanel(root, refs, fontAsset);
         refs.roundUtilityBar = CreateRoundUtilityBar(root, refs, fontAsset);
+        refs.roundInfoPanel = CreateRoundInfoPanel(root, refs, fontAsset);
+        refs.coinsText = CreateCoinsHudText(root, fontAsset);
+        refs.scoreText = CreateScoreHudText(root, fontAsset);
         refs.rollText = CreateHudText(root, fontAsset);
 
         refs.shopPanel.SetActive(false);
         refs.challengesPanel.SetActive(false);
         refs.settingsPanel.SetActive(false);
         refs.roundUtilityBar.SetActive(false);
+        refs.roundInfoPanel.SetActive(false);
+        refs.coinsText.gameObject.SetActive(false);
+        refs.scoreText.gameObject.SetActive(false);
+        refs.rollText.gameObject.SetActive(false);
     }
 
     private static GameObject CreateMainMenuPanel(Transform parent, UiRefs refs, TMP_FontAsset fontAsset)
     {
         RectTransform panel = CreateScreenPanel("MainMenuPanel", parent, GetSurfaceStyle(SurfaceRole.ScreenOverlay).backgroundColor);
-        RectTransform card = CreateResponsiveCard("MainMenuCard", panel, MainMenuCardAnchorMin, MainMenuCardAnchorMax, GetSurfaceStyle(SurfaceRole.Card).backgroundColor);
-        ConfigureVerticalLayout(card, MenuSpacing, MenuPadding, TextAnchor.UpperCenter);
+        RectTransform card = CreateResponsiveCard("MainMenuCard", panel, GetSurfaceStyle(SurfaceRole.Card).backgroundColor);
+        ConfigureResponsiveAspectCard(card, MainMenuCardWidthPercent, MainMenuCardMaxHeightPercent, MainMenuCardAspectRatio, MainMenuCardMinWidth, MainMenuCardMaxWidth);
+        ConfigureVerticalLayout(card, MainMenuSpacing, MainMenuPadding, TextAnchor.UpperCenter);
         ApplySurfaceStyle(card.gameObject, SurfaceRole.Card);
 
-        CreateText(card, "TitleText", "Dice Roguelite", fontAsset, TextRole.MainTitle, 120f);
-        CreateText(card, "SubtitleText", "A clean prototype hub for entering runs, browsing meta progression, and expanding the roguelite structure over time.", fontAsset, TextRole.Subtitle, 128f);
+        refs.shardsText = CreateText(card, "ShardsText", "Shards: 0", fontAsset, TextRole.HudResource, 34f, 0f, AccentTextColor);
+        CreateText(card, "TitleText", "Dice Roguelite", fontAsset, TextRole.MainTitle, MainMenuTitleHeight);
+        CreateText(card, "SubtitleText", "A clean prototype hub for entering runs, browsing meta progression, and expanding the roguelite structure over time.", fontAsset, TextRole.Subtitle, MainMenuSubtitleHeight);
         CreateDivider(card);
 
         RectTransform actionGroup = CreateLayoutPanel("ActionGroup", card, GetSurfaceStyle(SurfaceRole.InsetCard).backgroundColor, 0f);
-        ConfigureVerticalLayout(actionGroup, 18, InnerCardPadding, TextAnchor.UpperCenter);
+        ConfigureVerticalLayout(actionGroup, MainMenuActionSpacing, MainMenuInnerPadding, TextAnchor.UpperCenter);
         ApplySurfaceStyle(actionGroup.gameObject, SurfaceRole.InsetCard);
 
-        refs.playButton = CreatePrimaryButton(actionGroup, "PlayButton", "Enter Round / Play", fontAsset);
-        refs.mainMenuShopButton = CreateSecondaryButton(actionGroup, "ShopButton", "Shop", MainButtonHeight, fontAsset);
-        refs.mainMenuChallengesButton = CreateSecondaryButton(actionGroup, "ChallengesButton", "Challenges", MainButtonHeight, fontAsset);
-        refs.mainMenuSettingsButton = CreateSecondaryButton(actionGroup, "SettingsButton", "Settings", MainButtonHeight, fontAsset);
+        refs.playButton = CreatePrimaryButton(actionGroup, "PlayButton", "Enter Round / Play", MainMenuButtonHeight, fontAsset, ButtonFontSize, TextRole.ButtonLabel);
+        refs.mainMenuShopButton = CreateSecondaryButton(actionGroup, "ShopButton", "Shop", MainMenuButtonHeight, fontAsset);
+        refs.mainMenuChallengesButton = CreateSecondaryButton(actionGroup, "ChallengesButton", "Challenges", MainMenuButtonHeight, fontAsset);
+        refs.mainMenuSettingsButton = CreateSecondaryButton(actionGroup, "SettingsButton", "Settings", MainMenuButtonHeight, fontAsset);
 
-        CreateText(card, "FutureText", "Future room: loadouts, codex, daily runs, profile, cloud save.", fontAsset, TextRole.SupportingHint, 72f);
+        CreateText(card, "FutureText", "Future room: loadouts, codex, daily runs, profile, cloud save.", fontAsset, TextRole.SupportingHint, MainMenuHintHeight);
         return panel.gameObject;
     }
 
     private static GameObject CreateShopPanel(Transform parent, UiRefs refs, TMP_FontAsset fontAsset)
     {
         RectTransform panel = CreateScreenPanel("ShopPanel", parent, GetSurfaceStyle(SurfaceRole.ScreenOverlay).backgroundColor);
-        RectTransform card = CreateResponsiveCard("ShopCard", panel, ScreenCardAnchorMin, ScreenCardAnchorMax, GetSurfaceStyle(SurfaceRole.Card).backgroundColor);
-        ConfigureVerticalLayout(card, MenuSpacing, MenuPadding, TextAnchor.UpperCenter);
+        RectTransform card = CreateResponsiveCard("ShopCard", panel, GetSurfaceStyle(SurfaceRole.Card).backgroundColor);
+        ConfigureResponsiveAspectCard(card, ScreenCardWidthPercent, ScreenCardMaxHeightPercent, ScreenCardAspectRatio, ScreenCardMinWidth, ScreenCardMaxWidth);
+        ConfigureVerticalLayout(card, 16, 22, TextAnchor.UpperCenter);
         ApplySurfaceStyle(card.gameObject, SurfaceRole.Card);
 
-        CreateText(card, "TitleText", "Shop", fontAsset, TextRole.SectionTitle, 78f);
-        refs.shopContextText = CreateText(card, "ShopContextText", "Meta Progression", fontAsset, TextRole.Subtitle, 42f, 0f, AccentTextColor);
-        CreateDivider(card);
+        RectTransform topBar = CreateLayoutPanel("ShopTopBar", card, GetSurfaceStyle(SurfaceRole.InsetCard).backgroundColor, 0f);
+        ConfigureHorizontalLayout(topBar, 12, 18);
+        ApplySurfaceStyle(topBar.gameObject, SurfaceRole.InsetCard);
 
-        RectTransform tabs = CreateLayoutRow("ShopTabRow", card, 16, TabButtonHeight);
-        refs.shopDiceUnlocksButton = CreateSecondaryButton(tabs, "DiceUnlocksButton", "Dice Unlocks", TabButtonHeight, fontAsset, TabButtonFontSize);
-        refs.shopEfficiencyButton = CreateSecondaryButton(tabs, "EfficiencyButton", "Efficiency / Automation", TabButtonHeight, fontAsset, TabButtonFontSize);
-        refs.shopScoreMultipliersButton = CreateSecondaryButton(tabs, "ScoreMultipliersButton", "Score Multipliers", TabButtonHeight, fontAsset, TabButtonFontSize);
+        refs.shopContextText = CreateText(topBar, "ShopContextText", "Shards: 0", fontAsset, TextRole.HudResource, 42f, 0f, AccentTextColor);
+        LayoutElement leftLayout = refs.shopContextText.GetComponent<LayoutElement>();
+        if (leftLayout != null)
+        {
+            leftLayout.minWidth = 220f;
+            leftLayout.preferredWidth = 220f;
+            leftLayout.flexibleWidth = 0f;
+        }
+
+        TMP_Text shopTitle = CreateText(topBar, "TitleText", "Shop", fontAsset, TextRole.CardTitle, 48f);
+        LayoutElement titleLayout = shopTitle.GetComponent<LayoutElement>();
+        if (titleLayout != null)
+        {
+            titleLayout.flexibleWidth = 1f;
+        }
+
+        refs.shopResetTabButton = CreateSecondaryButton(topBar, "ShopResetTabButton", "Reset Tab", 56f, fontAsset, 22);
+        LayoutElement resetLayout = refs.shopResetTabButton.GetComponent<LayoutElement>();
+        if (resetLayout != null)
+        {
+            resetLayout.minWidth = 170f;
+            resetLayout.preferredWidth = 170f;
+            resetLayout.flexibleWidth = 0f;
+        }
+
+        refs.shopReturnButton = CreateSecondaryButton(topBar, "ShopBackButton", "Back to Main Menu", 56f, fontAsset, 24);
+        LayoutElement backLayout = refs.shopReturnButton.GetComponent<LayoutElement>();
+        if (backLayout != null)
+        {
+            backLayout.minWidth = 248f;
+            backLayout.preferredWidth = 248f;
+            backLayout.flexibleWidth = 0f;
+        }
+
+        RectTransform tabs = CreateLayoutRow("ShopTabRow", card, 10, 58f);
+        refs.shopDiceUnlocksButton = CreateSecondaryButton(tabs, "DiceUnlocksButton", "Dice Unlocks", 58f, fontAsset, 21);
+        refs.shopEfficiencyButton = CreateSecondaryButton(tabs, "EfficiencyButton", "Efficiency / Automation", 58f, fontAsset, 21);
+        refs.shopScoreMultipliersButton = CreateSecondaryButton(tabs, "ScoreMultipliersButton", "Score Multipliers", 58f, fontAsset, 21);
 
         RectTransform infoCard = CreateLayoutPanel("ShopContentCard", card, GetSurfaceStyle(SurfaceRole.InsetCard).backgroundColor, 1f);
-        ConfigureVerticalLayout(infoCard, PanelSpacing, 34, TextAnchor.UpperLeft);
+        ConfigureVerticalLayout(infoCard, 12, 18, TextAnchor.UpperLeft);
         ApplySurfaceStyle(infoCard.gameObject, SurfaceRole.InsetCard);
-        refs.shopSectionTitleText = CreateText(infoCard, "ShopSectionTitleText", "Dice Unlocks", fontAsset, TextRole.CardTitle, 62f);
-        CreateDivider(infoCard, new Color(0.33f, 0.42f, 0.53f, 0.5f));
-        refs.shopContentText = CreateText(infoCard, "ShopContentText", string.Empty, fontAsset, TextRole.Body, 420f, 1f);
+        refs.shopSectionTitleText = CreateText(infoCard, "ShopSectionTitleText", "Dice Unlocks", fontAsset, TextRole.SupportingHint, 0f);
+        LayoutElement sectionLayout = refs.shopSectionTitleText.GetComponent<LayoutElement>();
+        if (sectionLayout != null)
+        {
+            sectionLayout.ignoreLayout = true;
+        }
 
-        refs.shopReturnButton = CreateSecondaryButton(card, "ShopBackButton", "Return to Main Menu", MainButtonHeight, fontAsset);
+        refs.shopContentText = CreateText(infoCard, "ShopContentText", string.Empty, fontAsset, TextRole.SupportingHint, 0f);
+        LayoutElement contentLayout = refs.shopContentText.GetComponent<LayoutElement>();
+        if (contentLayout != null)
+        {
+            contentLayout.ignoreLayout = true;
+        }
+
+        refs.shopTreeRoot = CreateLayoutContainer("ShopTreeRoot", infoCard, 1f);
+        ConfigureVerticalLayout(refs.shopTreeRoot, 14, 0, TextAnchor.UpperCenter);
+        refs.shopTooltipPresenter = CreateShopTooltip(panel, fontAsset);
         return panel.gameObject;
     }
 
     private static GameObject CreateChallengesPanel(Transform parent, UiRefs refs, TMP_FontAsset fontAsset)
     {
         RectTransform panel = CreateScreenPanel("ChallengesPanel", parent, GetSurfaceStyle(SurfaceRole.ScreenOverlay).backgroundColor);
-        RectTransform card = CreateResponsiveCard("ChallengesCard", panel, ScreenCardAnchorMin, ScreenCardAnchorMax, GetSurfaceStyle(SurfaceRole.Card).backgroundColor);
+        RectTransform card = CreateResponsiveCard("ChallengesCard", panel, GetSurfaceStyle(SurfaceRole.Card).backgroundColor);
+        ConfigureResponsiveAspectCard(card, ScreenCardWidthPercent, ScreenCardMaxHeightPercent, ScreenCardAspectRatio, ScreenCardMinWidth, ScreenCardMaxWidth);
         ConfigureVerticalLayout(card, MenuSpacing, MenuPadding, TextAnchor.UpperCenter);
         ApplySurfaceStyle(card.gameObject, SurfaceRole.Card);
 
@@ -607,6 +755,7 @@ public static class PrototypeMenuSceneBuilder
         ConfigureVerticalLayout(contentCard, PanelSpacing, 34, TextAnchor.UpperLeft);
         ApplySurfaceStyle(contentCard.gameObject, SurfaceRole.InsetCard);
         refs.challengesContentText = CreateText(contentCard, "ChallengesContentText", string.Empty, fontAsset, TextRole.Body, 420f, 1f);
+        ConfigureFlexibleTextLayout(refs.challengesContentText, 120f);
 
         refs.challengesBackButton = CreateSecondaryButton(card, "ChallengesBackButton", "Back", MainButtonHeight, fontAsset);
         return panel.gameObject;
@@ -615,18 +764,39 @@ public static class PrototypeMenuSceneBuilder
     private static GameObject CreateSettingsPanel(Transform parent, UiRefs refs, TMP_FontAsset fontAsset)
     {
         RectTransform panel = CreateScreenPanel("SettingsPanel", parent, GetSurfaceStyle(SurfaceRole.ScreenOverlay).backgroundColor);
-        RectTransform card = CreateResponsiveCard("SettingsCard", panel, ScreenCardAnchorMin, ScreenCardAnchorMax, GetSurfaceStyle(SurfaceRole.Card).backgroundColor);
+        RectTransform card = CreateResponsiveCard("SettingsCard", panel, GetSurfaceStyle(SurfaceRole.Card).backgroundColor);
+        ConfigureResponsiveAspectCard(card, ScreenCardWidthPercent, ScreenCardMaxHeightPercent, ScreenCardAspectRatio, ScreenCardMinWidth, ScreenCardMaxWidth);
         ConfigureVerticalLayout(card, MenuSpacing, MenuPadding, TextAnchor.UpperCenter);
         ApplySurfaceStyle(card.gameObject, SurfaceRole.Card);
 
-        CreateText(card, "TitleText", "Settings", fontAsset, TextRole.SectionTitle, 78f);
-        CreateText(card, "SubtitleText", "Simple structure for future real options. In round, this acts like an overlay reference screen rather than a separate pause menu.", fontAsset, TextRole.Subtitle, 90f);
+        CreateText(card, "TitleText", "Settings", fontAsset, TextRole.SectionTitle, 72f);
+        CreateText(card, "SubtitleText", "Adjust controls, video, audio, and lightweight gameplay preferences. Changes save automatically.", fontAsset, TextRole.Subtitle, 74f);
         CreateDivider(card);
 
         RectTransform contentCard = CreateLayoutPanel("SettingsContentCard", card, GetSurfaceStyle(SurfaceRole.InsetCard).backgroundColor, 1f);
-        ConfigureVerticalLayout(contentCard, PanelSpacing, 34, TextAnchor.UpperLeft);
+        ConfigureVerticalLayout(contentCard, 14, 20, TextAnchor.UpperLeft);
         ApplySurfaceStyle(contentCard.gameObject, SurfaceRole.InsetCard);
-        refs.settingsContentText = CreateText(contentCard, "SettingsContentText", string.Empty, fontAsset, TextRole.Body, 420f, 1f);
+
+        refs.settingsContentText = CreateText(contentCard, "SettingsContentText", "Changes apply immediately and are stored automatically.", fontAsset, TextRole.SupportingHint, 30f);
+
+        RectTransform settingsScrollContent = CreateScrollContentArea("SettingsScrollView", contentCard);
+
+        RectTransform controlsSection = CreateSettingsSection(settingsScrollContent, "SettingsControlsSection", "Controls", fontAsset);
+        CreateSettingsRebindRow(controlsSection, "Roll Dice", "RollKeyValueText", out refs.rollKeyValueText, "RollKeyRebindButton", out refs.rollKeyRebindButton, fontAsset);
+        CreateSettingsRebindRow(controlsSection, "Back / Close", "BackKeyValueText", out refs.backKeyValueText, "BackKeyRebindButton", out refs.backKeyRebindButton, fontAsset);
+
+        RectTransform videoSection = CreateSettingsSection(settingsScrollContent, "SettingsVideoSection", "Video", fontAsset);
+        CreateSettingsDropdownRow(videoSection, "Resolution", "ResolutionDropdown", out refs.resolutionDropdown, fontAsset);
+        CreateSettingsDropdownRow(videoSection, "Display Mode", "DisplayModeDropdown", out refs.displayModeDropdown, fontAsset);
+        CreateSettingsToggleRow(videoSection, "VSync", "VSyncToggle", out refs.vSyncToggle, fontAsset);
+
+        RectTransform audioSection = CreateSettingsSection(settingsScrollContent, "SettingsAudioSection", "Audio", fontAsset);
+        CreateSettingsSliderRow(audioSection, "Master Volume", "MasterVolumeSlider", out refs.masterVolumeSlider, "MasterVolumeValueText", out refs.masterVolumeValueText, fontAsset);
+        CreateSettingsSliderRow(audioSection, "Music Volume", "MusicVolumeSlider", out refs.musicVolumeSlider, "MusicVolumeValueText", out refs.musicVolumeValueText, fontAsset);
+        CreateSettingsSliderRow(audioSection, "SFX Volume", "SfxVolumeSlider", out refs.sfxVolumeSlider, "SfxVolumeValueText", out refs.sfxVolumeValueText, fontAsset);
+
+        RectTransform gameplaySection = CreateSettingsSection(settingsScrollContent, "SettingsGameplaySection", "Gameplay", fontAsset);
+        CreateSettingsSliderRow(gameplaySection, "UI Scale", "UiScaleSlider", out refs.uiScaleSlider, "UiScaleValueText", out refs.uiScaleValueText, fontAsset, 0.75f, 1.35f);
 
         refs.settingsBackButton = CreateSecondaryButton(card, "SettingsBackButton", "Back", MainButtonHeight, fontAsset);
         return panel.gameObject;
@@ -647,22 +817,84 @@ public static class PrototypeMenuSceneBuilder
         ApplySurfaceStyle(bar.gameObject, SurfaceRole.UtilityBar);
         refs.roundChallengesButton = CreateSecondaryButton(bar, "RoundChallengesButton", "Challenges", UtilityButtonHeight, fontAsset, UtilityButtonFontSize);
         refs.roundSettingsButton = CreateSecondaryButton(bar, "RoundSettingsButton", "Settings", UtilityButtonHeight, fontAsset, UtilityButtonFontSize);
+        refs.roundSpendCoinsButton = CreateSecondaryButton(bar, "RoundSpendCoinsButton", "Spend 3 Coins", UtilityButtonHeight, fontAsset, UtilityButtonFontSize);
+        refs.roundCashOutButton = CreatePrimaryButton(bar, "RoundCashOutButton", "Cash Out", UtilityButtonHeight, fontAsset, UtilityButtonFontSize, TextRole.UtilityLabel);
         refs.roundMainMenuButton = CreateSecondaryButton(bar, "RoundMainMenuButton", "Return to Main Menu", UtilityButtonHeight, fontAsset, UtilityButtonFontSize);
         return bar.gameObject;
+    }
+
+    private static GameObject CreateRoundInfoPanel(Transform parent, UiRefs refs, TMP_FontAsset fontAsset)
+    {
+        RectTransform panel = CreateRect("RoundInfoPanel", parent);
+        panel.anchorMin = new Vector2(1f, 0.5f);
+        panel.anchorMax = new Vector2(1f, 0.5f);
+        panel.pivot = new Vector2(1f, 0.5f);
+        panel.anchoredPosition = new Vector2(-28f, 8f);
+        panel.sizeDelta = new Vector2(360f, 460f);
+
+        Image image = panel.gameObject.AddComponent<Image>();
+        image.color = GetSurfaceStyle(SurfaceRole.Card).backgroundColor;
+        ConfigureVerticalLayout(panel, 18, 24, TextAnchor.UpperLeft);
+        ApplySurfaceStyle(panel.gameObject, SurfaceRole.Card);
+
+        refs.roundInfoTitleText = CreateText(panel, "RoundInfoTitleText", "Run Info", fontAsset, TextRole.CardTitle, 36f);
+        RectTransform tabRow = CreateLayoutRow("RoundInfoTabRow", panel, 6, 36f);
+        refs.roundInfoScoringButton = CreateSecondaryButton(tabRow, "RoundInfoScoringButton", "Scoring", 36f, fontAsset, 12);
+        refs.roundInfoCoinsButton = CreateSecondaryButton(tabRow, "RoundInfoCoinsButton", "Coins", 36f, fontAsset, 12);
+        refs.roundInfoActiveEffectsButton = CreateSecondaryButton(tabRow, "RoundInfoActiveEffectsButton", "Effects", 36f, fontAsset, 12);
+        refs.roundInfoRunInfoButton = CreateSecondaryButton(tabRow, "RoundInfoRunInfoButton", "Run Info", 36f, fontAsset, 12);
+        CreateDivider(panel);
+
+        RectTransform content = CreateLayoutPanel("RoundInfoContentCard", panel, GetSurfaceStyle(SurfaceRole.InsetCard).backgroundColor, 1f);
+        ConfigureVerticalLayout(content, 12, 22, TextAnchor.UpperLeft);
+        ApplySurfaceStyle(content.gameObject, SurfaceRole.InsetCard);
+        refs.roundInfoText = CreateText(content, "RoundInfoText", "Select a tab to view the current run info.", fontAsset, TextRole.Body, 180f, 1f);
+
+        return panel.gameObject;
+    }
+
+    private static TMP_Text CreateCoinsHudText(Transform parent, TMP_FontAsset fontAsset)
+    {
+        RectTransform rect = CreateRect("CoinsText", parent);
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = new Vector2(24f, -24f);
+        rect.sizeDelta = new Vector2(260f, 100f);
+
+        TextMeshProUGUI text = rect.gameObject.AddComponent<TextMeshProUGUI>();
+        ApplyTextStyle(text, fontAsset, TextRole.HudResource);
+        text.text = "Coins\n-";
+        return text;
+    }
+
+    private static TMP_Text CreateScoreHudText(Transform parent, TMP_FontAsset fontAsset)
+    {
+        RectTransform rect = CreateRect("ScoreText", parent);
+        rect.anchorMin = new Vector2(0.5f, 1f);
+        rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = new Vector2(0f, -104f);
+        rect.sizeDelta = new Vector2(320f, 110f);
+
+        TextMeshProUGUI text = rect.gameObject.AddComponent<TextMeshProUGUI>();
+        ApplyTextStyle(text, fontAsset, TextRole.HudScore);
+        text.text = "Score\n-";
+        return text;
     }
 
     private static TMP_Text CreateHudText(Transform parent, TMP_FontAsset fontAsset)
     {
         RectTransform rect = CreateRect("RollText", parent);
-        rect.anchorMin = new Vector2(0f, 1f);
-        rect.anchorMax = new Vector2(0f, 1f);
-        rect.pivot = new Vector2(0f, 1f);
-        rect.anchoredPosition = new Vector2(24f, -24f);
-        rect.sizeDelta = new Vector2(600f, 120f);
+        rect.anchorMin = new Vector2(0.5f, 1f);
+        rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = new Vector2(0f, -210f);
+        rect.sizeDelta = new Vector2(720f, 132f);
 
         TextMeshProUGUI text = rect.gameObject.AddComponent<TextMeshProUGUI>();
         ApplyTextStyle(text, fontAsset, TextRole.RollResult);
-        text.text = "Roll: -, -, -\nTotal: -";
+        text.text = "Press your roll binding to roll.\nStarting Coins: -\nCash out after any resolved roll.";
         return text;
     }
 
@@ -673,6 +905,11 @@ public static class PrototypeMenuSceneBuilder
         SetObjectReference(serializedController, "diceManager", diceManager);
         SetObjectReference(serializedController, "eventSystem", refs.eventSystem);
         SetObjectReference(serializedController, "rollText", refs.rollText);
+        SetObjectReference(serializedController, "scoreText", refs.scoreText);
+        SetObjectReference(serializedController, "coinsText", refs.coinsText);
+        SetObjectReference(serializedController, "shardsText", refs.shardsText);
+        SetObjectReference(serializedController, "roundInfoPanel", refs.roundInfoPanel);
+        SetObjectReference(serializedController, "roundInfoText", refs.roundInfoText);
         SetObjectReference(serializedController, "mainMenuPanel", refs.mainMenuPanel);
         SetObjectReference(serializedController, "shopPanel", refs.shopPanel);
         SetObjectReference(serializedController, "challengesPanel", refs.challengesPanel);
@@ -686,15 +923,42 @@ public static class PrototypeMenuSceneBuilder
         SetObjectReference(serializedController, "shopEfficiencyButton", refs.shopEfficiencyButton);
         SetObjectReference(serializedController, "shopScoreMultipliersButton", refs.shopScoreMultipliersButton);
         SetObjectReference(serializedController, "shopReturnButton", refs.shopReturnButton);
+        SetObjectReference(serializedController, "shopResetTabButton", refs.shopResetTabButton);
         SetObjectReference(serializedController, "shopContextText", refs.shopContextText);
         SetObjectReference(serializedController, "shopSectionTitleText", refs.shopSectionTitleText);
         SetObjectReference(serializedController, "shopContentText", refs.shopContentText);
+        SetObjectReference(serializedController, "shopTreeRoot", refs.shopTreeRoot);
+        SetObjectReference(serializedController, "shopTooltipPresenter", refs.shopTooltipPresenter);
         SetObjectReference(serializedController, "challengesBackButton", refs.challengesBackButton);
         SetObjectReference(serializedController, "challengesContentText", refs.challengesContentText);
         SetObjectReference(serializedController, "settingsBackButton", refs.settingsBackButton);
         SetObjectReference(serializedController, "settingsContentText", refs.settingsContentText);
+        SetObjectReference(serializedController, "canvasScaler", refs.canvasScaler);
+        SetObjectReference(serializedController, "roundInfoTitleText", refs.roundInfoTitleText);
+        SetObjectReference(serializedController, "roundInfoScoringButton", refs.roundInfoScoringButton);
+        SetObjectReference(serializedController, "roundInfoCoinsButton", refs.roundInfoCoinsButton);
+        SetObjectReference(serializedController, "roundInfoActiveEffectsButton", refs.roundInfoActiveEffectsButton);
+        SetObjectReference(serializedController, "roundInfoRunInfoButton", refs.roundInfoRunInfoButton);
+        SetObjectReference(serializedController, "rollKeyValueText", refs.rollKeyValueText);
+        SetObjectReference(serializedController, "rollKeyRebindButton", refs.rollKeyRebindButton);
+        SetObjectReference(serializedController, "backKeyValueText", refs.backKeyValueText);
+        SetObjectReference(serializedController, "backKeyRebindButton", refs.backKeyRebindButton);
+        SetObjectReference(serializedController, "resolutionDropdown", refs.resolutionDropdown);
+        SetObjectReference(serializedController, "displayModeDropdown", refs.displayModeDropdown);
+        SetObjectReference(serializedController, "vSyncToggle", refs.vSyncToggle);
+        SetObjectReference(serializedController, "masterVolumeSlider", refs.masterVolumeSlider);
+        SetObjectReference(serializedController, "masterVolumeValueText", refs.masterVolumeValueText);
+        SetObjectReference(serializedController, "musicVolumeSlider", refs.musicVolumeSlider);
+        SetObjectReference(serializedController, "musicVolumeValueText", refs.musicVolumeValueText);
+        SetObjectReference(serializedController, "sfxVolumeSlider", refs.sfxVolumeSlider);
+        SetObjectReference(serializedController, "sfxVolumeValueText", refs.sfxVolumeValueText);
+        SetObjectReference(serializedController, "uiScaleSlider", refs.uiScaleSlider);
+        SetObjectReference(serializedController, "uiScaleValueText", refs.uiScaleValueText);
+        SetObjectReference(serializedController, "detailedRollBreakdownToggle", refs.detailedRollBreakdownToggle);
         SetObjectReference(serializedController, "roundChallengesButton", refs.roundChallengesButton);
         SetObjectReference(serializedController, "roundSettingsButton", refs.roundSettingsButton);
+        SetObjectReference(serializedController, "roundSpendCoinsButton", refs.roundSpendCoinsButton);
+        SetObjectReference(serializedController, "roundCashOutButton", refs.roundCashOutButton);
         SetObjectReference(serializedController, "roundMainMenuButton", refs.roundMainMenuButton);
         serializedController.ApplyModifiedPropertiesWithoutUndo();
     }
@@ -730,18 +994,46 @@ public static class PrototypeMenuSceneBuilder
         return rect;
     }
 
-    private static RectTransform CreateResponsiveCard(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Color backgroundColor)
+    private static RectTransform CreateResponsiveCard(string name, Transform parent, Color backgroundColor)
     {
         RectTransform rect = CreateRect(name, parent);
-        rect.anchorMin = anchorMin;
-        rect.anchorMax = anchorMax;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = Vector2.zero;
         rect.pivot = new Vector2(0.5f, 0.5f);
 
         Image image = rect.gameObject.AddComponent<Image>();
         image.color = backgroundColor;
         return rect;
+    }
+
+    private static void ConfigureResponsiveAspectCard(
+        RectTransform rect,
+        float widthPercent,
+        float maxHeightPercent,
+        float aspectRatio,
+        float minWidth,
+        float maxWidth)
+    {
+        if (rect == null)
+        {
+            return;
+        }
+
+        AspectRatioFitter fitter = rect.GetComponent<AspectRatioFitter>();
+        if (fitter != null)
+        {
+            Object.DestroyImmediate(fitter);
+        }
+
+        ResponsiveAspectCard responsiveCard = rect.GetComponent<ResponsiveAspectCard>();
+        if (responsiveCard == null)
+        {
+            responsiveCard = rect.gameObject.AddComponent<ResponsiveAspectCard>();
+        }
+
+        responsiveCard.Configure(widthPercent, maxHeightPercent, aspectRatio, minWidth, maxWidth);
     }
 
     private static RectTransform CreateAnchoredStretchPanel(
@@ -778,6 +1070,17 @@ public static class PrototypeMenuSceneBuilder
         return rect;
     }
 
+    private static RectTransform CreateLayoutContainer(string name, Transform parent, float flexHeight)
+    {
+        RectTransform rect = CreateRect(name, parent);
+
+        LayoutElement layoutElement = rect.gameObject.AddComponent<LayoutElement>();
+        layoutElement.minHeight = 160f;
+        layoutElement.flexibleHeight = flexHeight;
+        layoutElement.flexibleWidth = 1f;
+        return rect;
+    }
+
     private static RectTransform CreateLayoutRow(string name, Transform parent, int spacing, float height)
     {
         RectTransform rect = CreateRect(name, parent);
@@ -787,6 +1090,160 @@ public static class PrototypeMenuSceneBuilder
         layoutElement.minHeight = height;
         layoutElement.preferredHeight = height;
         return rect;
+    }
+
+    private static RectTransform CreateScrollContentArea(string name, Transform parent)
+    {
+        RectTransform scrollView = CreateRect(name, parent);
+        LayoutElement scrollLayout = scrollView.gameObject.AddComponent<LayoutElement>();
+        scrollLayout.minHeight = 320f;
+        scrollLayout.flexibleHeight = 1f;
+        scrollLayout.flexibleWidth = 1f;
+
+        Image scrollImage = scrollView.gameObject.AddComponent<Image>();
+        scrollImage.color = new Color(1f, 1f, 1f, 0.015f);
+
+        ScrollRect scrollRect = scrollView.gameObject.AddComponent<ScrollRect>();
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
+        scrollRect.movementType = ScrollRect.MovementType.Clamped;
+        scrollRect.scrollSensitivity = 24f;
+        scrollRect.inertia = true;
+        scrollRect.decelerationRate = 0.12f;
+
+        RectTransform viewport = CreateStretchRect("Viewport", scrollView);
+        Image viewportImage = viewport.gameObject.AddComponent<Image>();
+        viewportImage.color = new Color(1f, 1f, 1f, 0.01f);
+        Mask mask = viewport.gameObject.AddComponent<Mask>();
+        mask.showMaskGraphic = false;
+
+        RectTransform content = CreateRect("Content", viewport);
+        content.anchorMin = new Vector2(0f, 1f);
+        content.anchorMax = new Vector2(1f, 1f);
+        content.pivot = new Vector2(0.5f, 1f);
+        content.offsetMin = new Vector2(0f, 0f);
+        content.offsetMax = new Vector2(0f, 0f);
+        ConfigureVerticalLayout(content, 14, 0, TextAnchor.UpperLeft);
+
+        ContentSizeFitter fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        scrollRect.viewport = viewport;
+        scrollRect.content = content;
+        return content;
+    }
+
+    private static RectTransform CreateSettingsSection(Transform parent, string name, string title, TMP_FontAsset fontAsset)
+    {
+        RectTransform section = CreateLayoutPanel(name, parent, new Color(1f, 1f, 1f, 0.028f), 0f);
+        ConfigureVerticalLayout(section, 10, 16, TextAnchor.UpperLeft);
+        AddOutline(section.gameObject, new Color(0.36f, 0.46f, 0.58f, 0.12f), new Vector2(1f, -1f));
+        CreateText(section, "SettingsSectionTitleText", title, fontAsset, TextRole.CardTitle, 30f);
+        return section;
+    }
+
+    private static void CreateSettingsRebindRow(
+        Transform parent,
+        string label,
+        string valueName,
+        out TMP_Text valueText,
+        string buttonName,
+        out Button button,
+        TMP_FontAsset fontAsset)
+    {
+        RectTransform row = CreateSettingsRow(parent, $"{buttonName}Row");
+        CreateSettingsFieldLabel(row, label, fontAsset);
+        valueText = CreateSettingsValueText(row, valueName, "Space", fontAsset, 120f);
+        button = CreateSecondaryButton(row, buttonName, "Rebind", 48f, fontAsset, 22);
+        ConfigureFixedWidth(button.gameObject, 130f);
+    }
+
+    private static void CreateSettingsDropdownRow(
+        Transform parent,
+        string label,
+        string dropdownName,
+        out TMP_Dropdown dropdown,
+        TMP_FontAsset fontAsset)
+    {
+        RectTransform row = CreateSettingsRow(parent, $"{dropdownName}Row");
+        CreateSettingsFieldLabel(row, label, fontAsset);
+        dropdown = CreateSettingsDropdown(row, dropdownName, fontAsset);
+    }
+
+    private static void CreateSettingsToggleRow(
+        Transform parent,
+        string label,
+        string toggleName,
+        out Toggle toggle,
+        TMP_FontAsset fontAsset)
+    {
+        RectTransform row = CreateSettingsRow(parent, $"{toggleName}Row");
+        CreateSettingsFieldLabel(row, label, fontAsset);
+        toggle = CreateSettingsToggle(row, toggleName);
+    }
+
+    private static void CreateSettingsSliderRow(
+        Transform parent,
+        string label,
+        string sliderName,
+        out Slider slider,
+        string valueName,
+        out TMP_Text valueText,
+        TMP_FontAsset fontAsset,
+        float minValue = 0f,
+        float maxValue = 1f)
+    {
+        RectTransform row = CreateSettingsRow(parent, $"{sliderName}Row");
+        CreateSettingsFieldLabel(row, label, fontAsset);
+        slider = CreateSettingsSlider(row, sliderName, minValue, maxValue);
+        valueText = CreateSettingsValueText(row, valueName, "100%", fontAsset, 84f);
+    }
+
+    private static UiTooltipPresenter CreateShopTooltip(Transform parent, TMP_FontAsset fontAsset)
+    {
+        RectTransform layer = CreateStretchRect("ShopTooltipLayer", parent);
+        LayoutElement layerLayout = layer.gameObject.AddComponent<LayoutElement>();
+        layerLayout.ignoreLayout = true;
+
+        RectTransform panel = CreateRect("ShopTooltipPanel", layer);
+        panel.anchorMin = new Vector2(0.5f, 0.5f);
+        panel.anchorMax = new Vector2(0.5f, 0.5f);
+        panel.pivot = new Vector2(0f, 1f);
+        panel.anchoredPosition = Vector2.zero;
+        panel.sizeDelta = new Vector2(320f, 170f);
+
+        CanvasGroup canvasGroup = layer.gameObject.AddComponent<CanvasGroup>();
+        canvasGroup.interactable = false;
+        canvasGroup.blocksRaycasts = false;
+
+        Image background = panel.gameObject.AddComponent<Image>();
+        background.color = new Color(0.08f, 0.11f, 0.16f, 0.98f);
+
+        Shadow shadow = panel.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.26f);
+        shadow.effectDistance = new Vector2(0f, -4f);
+        shadow.useGraphicAlpha = true;
+
+        Outline outline = panel.gameObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0.44f, 0.58f, 0.75f, 0.18f);
+        outline.effectDistance = new Vector2(1f, -1f);
+        outline.useGraphicAlpha = true;
+
+        ConfigureVerticalLayout(panel, 8, 16, TextAnchor.UpperLeft);
+
+        TMP_Text title = CreateText(panel, "ShopTooltipTitleText", "Tooltip", fontAsset, TextRole.CardTitle, 34f);
+        TMP_Text body = CreateText(panel, "ShopTooltipBodyText", "Tooltip body", fontAsset, TextRole.Body, 96f, 1f);
+        if (body != null)
+        {
+            body.fontSize = 18;
+            body.lineSpacing = 1.02f;
+        }
+
+        UiTooltipPresenter presenter = panel.gameObject.AddComponent<UiTooltipPresenter>();
+        presenter.Configure(layer, panel, title, body);
+        layer.gameObject.SetActive(false);
+        return presenter;
     }
 
     private static RectTransform CreateStretchRect(string name, Transform parent)
@@ -810,6 +1267,18 @@ public static class PrototypeMenuSceneBuilder
         return rect;
     }
 
+    private static RectTransform CreateSettingsRow(Transform parent, string name)
+    {
+        RectTransform row = CreateRect(name, parent);
+        ConfigureHorizontalRowLayout(row, 14, 0);
+
+        LayoutElement layoutElement = row.gameObject.AddComponent<LayoutElement>();
+        layoutElement.minHeight = 56f;
+        layoutElement.preferredHeight = 56f;
+        layoutElement.flexibleWidth = 1f;
+        return row;
+    }
+
     private static void ConfigureVerticalLayout(RectTransform rect, int spacing, int padding, TextAnchor alignment)
     {
         VerticalLayoutGroup layout = rect.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -819,6 +1288,18 @@ public static class PrototypeMenuSceneBuilder
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+    }
+
+    private static void ConfigureHorizontalRowLayout(RectTransform rect, int spacing, int padding)
+    {
+        HorizontalLayoutGroup layout = rect.gameObject.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = spacing;
+        layout.padding = new RectOffset(padding, padding, padding, padding);
+        layout.childAlignment = TextAnchor.MiddleLeft;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
     }
 
@@ -857,9 +1338,268 @@ public static class PrototypeMenuSceneBuilder
         return text;
     }
 
+    private static void ConfigureFlexibleTextLayout(TMP_Text text, float minimumHeight)
+    {
+        if (text == null)
+        {
+            return;
+        }
+
+        LayoutElement layoutElement = text.GetComponent<LayoutElement>();
+        if (layoutElement == null)
+        {
+            return;
+        }
+
+        layoutElement.minHeight = minimumHeight;
+        layoutElement.preferredHeight = -1f;
+        layoutElement.flexibleHeight = 1f;
+    }
+
+    private static TMP_Text CreateSettingsFieldLabel(Transform parent, string content, TMP_FontAsset fontAsset)
+    {
+        TMP_Text label = CreateText(parent, "SettingsFieldLabelText", content, fontAsset, TextRole.Body, 34f);
+        ConfigureFixedWidth(label.gameObject, 280f);
+        label.alignment = TextAlignmentOptions.MidlineLeft;
+        label.fontSize = 24f;
+        return label;
+    }
+
+    private static TMP_Text CreateSettingsValueText(Transform parent, string name, string content, TMP_FontAsset fontAsset, float width)
+    {
+        TMP_Text valueText = CreateText(parent, name, content, fontAsset, TextRole.Subtitle, 34f, 0f, AccentTextColor);
+        ConfigureFixedWidth(valueText.gameObject, width);
+        valueText.name = name;
+        valueText.alignment = TextAlignmentOptions.MidlineRight;
+        valueText.fontSize = 22f;
+        return valueText;
+    }
+
+    private static TMP_Dropdown CreateSettingsDropdown(Transform parent, string name, TMP_FontAsset fontAsset)
+    {
+        RectTransform rect = CreateRect(name, parent);
+        Image image = rect.gameObject.AddComponent<Image>();
+        image.color = SecondaryButtonColor;
+
+        TMP_Dropdown dropdown = rect.gameObject.AddComponent<TMP_Dropdown>();
+        dropdown.targetGraphic = image;
+        ApplyButtonStyleGraphic(rect.gameObject, image, ButtonRole.Secondary);
+
+        LayoutElement layoutElement = rect.gameObject.AddComponent<LayoutElement>();
+        layoutElement.minHeight = 48f;
+        layoutElement.preferredHeight = 48f;
+        layoutElement.preferredWidth = 340f;
+        layoutElement.flexibleWidth = 1f;
+
+        RectTransform labelRect = CreateRect("Label", rect);
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = new Vector2(16f, 8f);
+        labelRect.offsetMax = new Vector2(-40f, -8f);
+        TextMeshProUGUI labelText = labelRect.gameObject.AddComponent<TextMeshProUGUI>();
+        ApplyTextStyle(labelText, fontAsset, TextRole.Body, null, 22);
+        labelText.alignment = TextAlignmentOptions.MidlineLeft;
+        labelText.text = "Option";
+
+        RectTransform arrowRect = CreateRect("Arrow", rect);
+        arrowRect.anchorMin = new Vector2(1f, 0.5f);
+        arrowRect.anchorMax = new Vector2(1f, 0.5f);
+        arrowRect.pivot = new Vector2(1f, 0.5f);
+        arrowRect.anchoredPosition = new Vector2(-14f, 0f);
+        arrowRect.sizeDelta = new Vector2(22f, 22f);
+        TextMeshProUGUI arrowText = arrowRect.gameObject.AddComponent<TextMeshProUGUI>();
+        arrowText.name = "DropdownArrowText";
+        ApplyTextStyle(arrowText, fontAsset, TextRole.ButtonLabel, null, 20);
+        arrowText.text = "v";
+        arrowText.alignment = TextAlignmentOptions.Center;
+
+        RectTransform template = CreateRect("Template", rect);
+        template.anchorMin = new Vector2(0f, 0f);
+        template.anchorMax = new Vector2(1f, 0f);
+        template.pivot = new Vector2(0.5f, 1f);
+        template.anchoredPosition = new Vector2(0f, -4f);
+        template.sizeDelta = new Vector2(0f, 180f);
+        template.gameObject.SetActive(false);
+
+        Image templateImage = template.gameObject.AddComponent<Image>();
+        templateImage.color = new Color(0.11f, 0.14f, 0.19f, 0.98f);
+        ScrollRect scrollRect = template.gameObject.AddComponent<ScrollRect>();
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
+        scrollRect.movementType = ScrollRect.MovementType.Clamped;
+        scrollRect.scrollSensitivity = 24f;
+
+        RectTransform viewport = CreateStretchRect("Viewport", template);
+        Image viewportImage = viewport.gameObject.AddComponent<Image>();
+        viewportImage.color = new Color(1f, 1f, 1f, 0.01f);
+        Mask mask = viewport.gameObject.AddComponent<Mask>();
+        mask.showMaskGraphic = false;
+
+        RectTransform content = CreateRect("Content", viewport);
+        content.anchorMin = new Vector2(0f, 1f);
+        content.anchorMax = new Vector2(1f, 1f);
+        content.pivot = new Vector2(0.5f, 1f);
+        content.offsetMin = Vector2.zero;
+        content.offsetMax = Vector2.zero;
+        ConfigureVerticalLayout(content, 0, 0, TextAnchor.UpperLeft);
+        ContentSizeFitter fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        RectTransform item = CreateRect("Item", content);
+        Image itemImage = item.gameObject.AddComponent<Image>();
+        itemImage.color = new Color(0.14f, 0.18f, 0.24f, 1f);
+        Toggle toggle = item.gameObject.AddComponent<Toggle>();
+        toggle.targetGraphic = itemImage;
+        LayoutElement itemLayout = item.gameObject.AddComponent<LayoutElement>();
+        itemLayout.minHeight = 42f;
+        itemLayout.preferredHeight = 42f;
+        itemLayout.flexibleWidth = 1f;
+
+        RectTransform checkmark = CreateRect("Checkmark", item);
+        checkmark.anchorMin = new Vector2(0f, 0.5f);
+        checkmark.anchorMax = new Vector2(0f, 0.5f);
+        checkmark.pivot = new Vector2(0.5f, 0.5f);
+        checkmark.anchoredPosition = new Vector2(16f, 0f);
+        checkmark.sizeDelta = new Vector2(16f, 16f);
+        Image checkmarkImage = checkmark.gameObject.AddComponent<Image>();
+        checkmarkImage.color = AccentTextColor;
+        toggle.graphic = checkmarkImage;
+
+        RectTransform itemLabelRect = CreateRect("Item Label", item);
+        itemLabelRect.anchorMin = Vector2.zero;
+        itemLabelRect.anchorMax = Vector2.one;
+        itemLabelRect.offsetMin = new Vector2(36f, 6f);
+        itemLabelRect.offsetMax = new Vector2(-12f, -6f);
+        TextMeshProUGUI itemLabel = itemLabelRect.gameObject.AddComponent<TextMeshProUGUI>();
+        ApplyTextStyle(itemLabel, fontAsset, TextRole.Body, null, 20);
+        itemLabel.alignment = TextAlignmentOptions.MidlineLeft;
+        itemLabel.text = "Option";
+
+        scrollRect.viewport = viewport;
+        scrollRect.content = content;
+        dropdown.template = template;
+        dropdown.captionText = labelText;
+        dropdown.itemText = itemLabel;
+        dropdown.alphaFadeSpeed = 0.12f;
+        return dropdown;
+    }
+
+    private static Toggle CreateSettingsToggle(Transform parent, string name)
+    {
+        RectTransform rect = CreateRect(name, parent);
+        LayoutElement layoutElement = rect.gameObject.AddComponent<LayoutElement>();
+        layoutElement.minWidth = 54f;
+        layoutElement.preferredWidth = 54f;
+        layoutElement.minHeight = 48f;
+        layoutElement.preferredHeight = 48f;
+        layoutElement.flexibleWidth = 0f;
+
+        Toggle toggle = rect.gameObject.AddComponent<Toggle>();
+
+        RectTransform background = CreateRect("Background", rect);
+        background.anchorMin = new Vector2(0.5f, 0.5f);
+        background.anchorMax = new Vector2(0.5f, 0.5f);
+        background.pivot = new Vector2(0.5f, 0.5f);
+        background.sizeDelta = new Vector2(28f, 28f);
+        Image backgroundImage = background.gameObject.AddComponent<Image>();
+        backgroundImage.color = SecondaryButtonColor;
+        AddOutline(background.gameObject, new Color(0.49f, 0.58f, 0.68f, 0.18f), new Vector2(1f, -1f));
+
+        RectTransform checkmark = CreateRect("Checkmark", background);
+        checkmark.anchorMin = Vector2.zero;
+        checkmark.anchorMax = Vector2.one;
+        checkmark.offsetMin = new Vector2(5f, 5f);
+        checkmark.offsetMax = new Vector2(-5f, -5f);
+        Image checkmarkImage = checkmark.gameObject.AddComponent<Image>();
+        checkmarkImage.color = AccentTextColor;
+
+        toggle.targetGraphic = backgroundImage;
+        toggle.graphic = checkmarkImage;
+        return toggle;
+    }
+
+    private static Slider CreateSettingsSlider(Transform parent, string name, float minValue, float maxValue)
+    {
+        RectTransform rect = CreateRect(name, parent);
+        LayoutElement layoutElement = rect.gameObject.AddComponent<LayoutElement>();
+        layoutElement.minHeight = 40f;
+        layoutElement.preferredHeight = 40f;
+        layoutElement.preferredWidth = 320f;
+        layoutElement.flexibleWidth = 1f;
+
+        Slider slider = rect.gameObject.AddComponent<Slider>();
+        slider.minValue = minValue;
+        slider.maxValue = maxValue;
+        slider.wholeNumbers = false;
+        slider.direction = Slider.Direction.LeftToRight;
+
+        RectTransform background = CreateRect("Background", rect);
+        background.anchorMin = new Vector2(0f, 0.5f);
+        background.anchorMax = new Vector2(1f, 0.5f);
+        background.pivot = new Vector2(0.5f, 0.5f);
+        background.offsetMin = new Vector2(0f, -5f);
+        background.offsetMax = new Vector2(0f, 5f);
+        Image backgroundImage = background.gameObject.AddComponent<Image>();
+        backgroundImage.color = new Color(0.19f, 0.24f, 0.30f, 1f);
+
+        RectTransform fillArea = CreateRect("Fill Area", rect);
+        fillArea.anchorMin = new Vector2(0f, 0f);
+        fillArea.anchorMax = new Vector2(1f, 1f);
+        fillArea.offsetMin = new Vector2(0f, 0f);
+        fillArea.offsetMax = new Vector2(0f, 0f);
+
+        RectTransform fill = CreateRect("Fill", fillArea);
+        fill.anchorMin = new Vector2(0f, 0.5f);
+        fill.anchorMax = new Vector2(1f, 0.5f);
+        fill.pivot = new Vector2(0f, 0.5f);
+        fill.offsetMin = new Vector2(0f, -5f);
+        fill.offsetMax = new Vector2(0f, 5f);
+        Image fillImage = fill.gameObject.AddComponent<Image>();
+        fillImage.color = AccentTextColor;
+
+        RectTransform handleSlideArea = CreateRect("Handle Slide Area", rect);
+        handleSlideArea.anchorMin = Vector2.zero;
+        handleSlideArea.anchorMax = Vector2.one;
+        handleSlideArea.offsetMin = Vector2.zero;
+        handleSlideArea.offsetMax = Vector2.zero;
+
+        RectTransform handle = CreateRect("Handle", handleSlideArea);
+        handle.anchorMin = new Vector2(0f, 0.5f);
+        handle.anchorMax = new Vector2(0f, 0.5f);
+        handle.pivot = new Vector2(0.5f, 0.5f);
+        handle.sizeDelta = new Vector2(20f, 20f);
+        Image handleImage = handle.gameObject.AddComponent<Image>();
+        handleImage.color = Color.white;
+        AddShadow(handle.gameObject, new Color(0f, 0f, 0f, 0.16f), new Vector2(0f, -2f));
+
+        slider.fillRect = fill;
+        slider.handleRect = handle;
+        slider.targetGraphic = handleImage;
+        return slider;
+    }
+
+    private static void ConfigureFixedWidth(GameObject target, float width)
+    {
+        LayoutElement layoutElement = target.GetComponent<LayoutElement>();
+        if (layoutElement == null)
+        {
+            layoutElement = target.AddComponent<LayoutElement>();
+        }
+
+        layoutElement.minWidth = width;
+        layoutElement.preferredWidth = width;
+        layoutElement.flexibleWidth = 0f;
+    }
+
     private static Button CreatePrimaryButton(Transform parent, string name, string label, TMP_FontAsset fontAsset)
     {
         return CreateButton(parent, name, label, fontAsset, ButtonRole.Primary, MainButtonHeight, ButtonFontSize, TextRole.ButtonLabel);
+    }
+
+    private static Button CreatePrimaryButton(Transform parent, string name, string label, float height, TMP_FontAsset fontAsset, int labelFontSize, TextRole textRole)
+    {
+        return CreateButton(parent, name, label, fontAsset, ButtonRole.Primary, height, labelFontSize, textRole);
     }
 
     private static Button CreateSecondaryButton(Transform parent, string name, string label, float height, TMP_FontAsset fontAsset)
@@ -1034,6 +1774,29 @@ public static class PrototypeMenuSceneBuilder
         }
     }
 
+    private static void ApplyButtonStyleGraphic(GameObject target, Image image, ButtonRole role)
+    {
+        if (target == null || image == null)
+        {
+            return;
+        }
+
+        ButtonStyleDefinition style = GetButtonStyle(role);
+        image.color = style.backgroundColor;
+        RemoveIfPresent<Outline>(target);
+        RemoveIfPresent<Shadow>(target);
+
+        if (style.useOutline)
+        {
+            AddOutline(target, style.outlineColor, style.outlineOffset);
+        }
+
+        if (style.useShadow)
+        {
+            AddShadow(target, style.shadowColor, style.shadowOffset);
+        }
+    }
+
     private static void ApplyTextStyle(TMP_Text text, TMP_FontAsset fontAsset, TextRole role, Color? colorOverride = null, int? fontSizeOverride = null)
     {
         TextStyleDefinition style = GetTextStyle(role);
@@ -1081,8 +1844,12 @@ public static class PrototypeMenuSceneBuilder
                 return new TextStyleDefinition(BodyFontSize, FontStyles.Normal, TextAlignmentOptions.TopLeft, BodyTextColor, TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1.08f);
             case TextRole.UtilityLabel:
                 return new TextStyleDefinition(UtilityButtonFontSize, FontStyles.Bold, TextAlignmentOptions.Center, new Color(0.96f, 0.97f, 0.98f, 1f), TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1f, true, new Color(0f, 0f, 0f, 0.18f), new Vector2(0f, -1f));
+            case TextRole.HudResource:
+                return new TextStyleDefinition(28, FontStyles.Bold, TextAlignmentOptions.TopLeft, BodyTextColor, TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1f, true, new Color(0f, 0f, 0f, 0.18f), new Vector2(0f, -1f));
+            case TextRole.HudScore:
+                return new TextStyleDefinition(40, FontStyles.Bold, TextAlignmentOptions.Center, TitleColor, TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1.02f, true, new Color(0f, 0f, 0f, 0.24f), new Vector2(0f, -1f));
             case TextRole.RollResult:
-                return new TextStyleDefinition(36, FontStyles.Bold, TextAlignmentOptions.TopLeft, Color.white, TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1.04f, true, new Color(0f, 0f, 0f, 0.22f), new Vector2(0f, -1f));
+                return new TextStyleDefinition(34, FontStyles.Bold, TextAlignmentOptions.Center, Color.white, TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1.04f, true, new Color(0f, 0f, 0f, 0.22f), new Vector2(0f, -1f));
             case TextRole.SupportingHint:
                 return new TextStyleDefinition(22, FontStyles.Italic, TextAlignmentOptions.Center, new Color(0.62f, 0.69f, 0.77f, 1f), TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1.04f);
             case TextRole.ButtonLabel:
