@@ -31,7 +31,7 @@ public static class PrototypeMenuSceneBuilder
     private const int BodyFontSize = 30;
     private const int ButtonFontSize = 32;
     private const int TabButtonFontSize = 24;
-    private const int UtilityButtonFontSize = 26;
+    private const int UtilityButtonFontSize = 24;
     private const float MainMenuCardAspectRatio = 0.86f;
     private const float ScreenCardAspectRatio = 1.24f;
     private const float MainMenuCardWidthPercent = 0.5f;
@@ -50,6 +50,12 @@ public static class PrototypeMenuSceneBuilder
     private const float MainMenuTitleHeight = 96f;
     private const float MainMenuSubtitleHeight = 88f;
     private const float MainMenuHintHeight = 42f;
+    private const float RoundHudStatWidth = 172f;
+    private const float RoundHudStatHeight = 40f;
+    private const float RoundInfoPanelWidth = 380f;
+    private const float RoundInfoPanelHeight = 560f;
+    private const float RoundInfoSummaryHeight = 112f;
+    private const float RoundRollSummaryHeight = 92f;
 
     private static readonly Vector2 UtilityBarAnchorMin = new Vector2(0.14f, 1f);
     private static readonly Vector2 UtilityBarAnchorMax = new Vector2(0.86f, 1f);
@@ -141,6 +147,8 @@ public static class PrototypeMenuSceneBuilder
         UtilityLabel,
         HudResource,
         HudScore,
+        HudStat,
+        CompactCardTitle,
         RollResult,
         SupportingHint,
     }
@@ -325,9 +333,9 @@ public static class PrototypeMenuSceneBuilder
         ApplyStyleToNamedText(root, "SfxVolumeValueText", fontAsset, TextRole.Subtitle, AccentTextColor);
         ApplyStyleToNamedText(root, "UiScaleValueText", fontAsset, TextRole.Subtitle, AccentTextColor);
         ApplyStyleToNamedText(root, "ShardsText", fontAsset, TextRole.HudResource, AccentTextColor);
-        ApplyStyleToNamedText(root, "CoinsText", fontAsset, TextRole.HudResource);
-        ApplyStyleToNamedText(root, "ScoreText", fontAsset, TextRole.HudScore);
-        ApplyStyleToNamedText(root, "RoundInfoTitleText", fontAsset, TextRole.CardTitle);
+        ApplyStyleToNamedText(root, "CoinsText", fontAsset, TextRole.HudStat);
+        ApplyStyleToNamedText(root, "ScoreText", fontAsset, TextRole.HudStat);
+        ApplyStyleToNamedText(root, "RoundInfoTitleText", fontAsset, TextRole.CompactCardTitle);
         ApplyStyleToNamedText(root, "RoundInfoText", fontAsset, TextRole.Body);
         ApplyStyleToNamedText(root, "FutureText", fontAsset, TextRole.SupportingHint);
         ApplyStyleToNamedText(root, "RollText", fontAsset, TextRole.RollResult);
@@ -625,9 +633,6 @@ public static class PrototypeMenuSceneBuilder
         refs.settingsPanel = CreateSettingsPanel(root, refs, fontAsset);
         refs.roundUtilityBar = CreateRoundUtilityBar(root, refs, fontAsset);
         refs.roundInfoPanel = CreateRoundInfoPanel(root, refs, fontAsset);
-        refs.coinsText = CreateCoinsHudText(root, fontAsset);
-        refs.scoreText = CreateScoreHudText(root, fontAsset);
-        refs.rollText = CreateHudText(root, fontAsset);
 
         refs.shopPanel.SetActive(false);
         refs.challengesPanel.SetActive(false);
@@ -813,8 +818,34 @@ public static class PrototypeMenuSceneBuilder
             UtilityButtonHeight,
             GetSurfaceStyle(SurfaceRole.UtilityBar).backgroundColor);
 
-        ConfigureHorizontalLayout(bar, 16, 16);
+        HorizontalLayoutGroup layout = bar.gameObject.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 14;
+        layout.padding = new RectOffset(16, 16, 16, 16);
+        layout.childAlignment = TextAnchor.MiddleLeft;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
         ApplySurfaceStyle(bar.gameObject, SurfaceRole.UtilityBar);
+
+        RectTransform statsGroup = CreateRect("RoundHudStatsGroup", bar);
+        ConfigureHorizontalRowLayout(statsGroup, 12, 0);
+        LayoutElement statsLayout = statsGroup.gameObject.AddComponent<LayoutElement>();
+        statsLayout.minWidth = 360f;
+        statsLayout.preferredWidth = 360f;
+        statsLayout.minHeight = UtilityButtonHeight;
+        statsLayout.preferredHeight = UtilityButtonHeight;
+        statsLayout.flexibleWidth = 0f;
+
+        refs.coinsText = CreateCoinsHudText(statsGroup, fontAsset);
+        refs.scoreText = CreateScoreHudText(statsGroup, fontAsset);
+
+        RectTransform spacer = CreateRect("RoundHudSpacer", bar);
+        LayoutElement spacerLayout = spacer.gameObject.AddComponent<LayoutElement>();
+        spacerLayout.minWidth = 0f;
+        spacerLayout.flexibleWidth = 1f;
+        spacerLayout.preferredWidth = 0f;
+
         refs.roundChallengesButton = CreateSecondaryButton(bar, "RoundChallengesButton", "Challenges", UtilityButtonHeight, fontAsset, UtilityButtonFontSize);
         refs.roundSettingsButton = CreateSecondaryButton(bar, "RoundSettingsButton", "Settings", UtilityButtonHeight, fontAsset, UtilityButtonFontSize);
         refs.roundSpendCoinsButton = CreateSecondaryButton(bar, "RoundSpendCoinsButton", "Spend 3 Coins", UtilityButtonHeight, fontAsset, UtilityButtonFontSize);
@@ -826,28 +857,62 @@ public static class PrototypeMenuSceneBuilder
     private static GameObject CreateRoundInfoPanel(Transform parent, UiRefs refs, TMP_FontAsset fontAsset)
     {
         RectTransform panel = CreateRect("RoundInfoPanel", parent);
-        panel.anchorMin = new Vector2(1f, 0.5f);
-        panel.anchorMax = new Vector2(1f, 0.5f);
-        panel.pivot = new Vector2(1f, 0.5f);
-        panel.anchoredPosition = new Vector2(-28f, 8f);
-        panel.sizeDelta = new Vector2(360f, 460f);
+        panel.anchorMin = new Vector2(0f, 0.5f);
+        panel.anchorMax = new Vector2(0f, 0.5f);
+        panel.pivot = new Vector2(0f, 0.5f);
+        panel.anchoredPosition = new Vector2(28f, 8f);
+        panel.sizeDelta = new Vector2(RoundInfoPanelWidth, RoundInfoPanelHeight);
 
         Image image = panel.gameObject.AddComponent<Image>();
         image.color = GetSurfaceStyle(SurfaceRole.Card).backgroundColor;
-        ConfigureVerticalLayout(panel, 18, 24, TextAnchor.UpperLeft);
+        ConfigureVerticalLayout(panel, 14, 24, TextAnchor.UpperLeft);
         ApplySurfaceStyle(panel.gameObject, SurfaceRole.Card);
+        panel.gameObject.AddComponent<RectMask2D>();
 
-        refs.roundInfoTitleText = CreateText(panel, "RoundInfoTitleText", "Run Info", fontAsset, TextRole.CardTitle, 36f);
-        RectTransform tabRow = CreateLayoutRow("RoundInfoTabRow", panel, 6, 36f);
+        RectTransform summaryArea = CreateLayoutPanel("RoundInfoSummaryArea", panel, new Color(1f, 1f, 1f, 0.028f), 0f);
+        ConfigureVerticalLayout(summaryArea, 0, 0, TextAnchor.UpperCenter);
+        summaryArea.gameObject.AddComponent<RectMask2D>();
+        LayoutElement summaryLayout = summaryArea.GetComponent<LayoutElement>();
+        if (summaryLayout != null)
+        {
+            summaryLayout.minHeight = RoundInfoSummaryHeight;
+            summaryLayout.preferredHeight = RoundInfoSummaryHeight;
+            summaryLayout.flexibleHeight = 0f;
+        }
+
+        refs.rollText = CreateText(summaryArea, "RollText", "Press your roll binding to roll.\nStarting Coins: -\nCash out after any resolved roll.", fontAsset, TextRole.RollResult, RoundRollSummaryHeight);
+        if (refs.rollText != null)
+        {
+            refs.rollText.alignment = TextAlignmentOptions.Top;
+            LayoutElement rollLayout = refs.rollText.GetComponent<LayoutElement>();
+            if (rollLayout != null)
+            {
+                rollLayout.minHeight = RoundInfoSummaryHeight - 8f;
+                rollLayout.preferredHeight = RoundInfoSummaryHeight - 8f;
+            }
+        }
+
+        RectTransform tabsArea = CreateLayoutPanel("RoundInfoTabsArea", panel, new Color(1f, 1f, 1f, 0.0f), 1f);
+        ConfigureVerticalLayout(tabsArea, 12, 0, TextAnchor.UpperLeft);
+        LayoutElement tabsLayout = tabsArea.GetComponent<LayoutElement>();
+        if (tabsLayout != null)
+        {
+            tabsLayout.flexibleHeight = 1f;
+            tabsLayout.minHeight = 0f;
+        }
+
+        refs.roundInfoTitleText = CreateText(tabsArea, "RoundInfoTitleText", "Run Info", fontAsset, TextRole.CompactCardTitle, 34f);
+        RectTransform tabRow = CreateLayoutRow("RoundInfoTabRow", tabsArea, 6, 36f);
         refs.roundInfoScoringButton = CreateSecondaryButton(tabRow, "RoundInfoScoringButton", "Scoring", 36f, fontAsset, 12);
         refs.roundInfoCoinsButton = CreateSecondaryButton(tabRow, "RoundInfoCoinsButton", "Coins", 36f, fontAsset, 12);
         refs.roundInfoActiveEffectsButton = CreateSecondaryButton(tabRow, "RoundInfoActiveEffectsButton", "Effects", 36f, fontAsset, 12);
         refs.roundInfoRunInfoButton = CreateSecondaryButton(tabRow, "RoundInfoRunInfoButton", "Run Info", 36f, fontAsset, 12);
-        CreateDivider(panel);
+        CreateDivider(tabsArea);
 
-        RectTransform content = CreateLayoutPanel("RoundInfoContentCard", panel, GetSurfaceStyle(SurfaceRole.InsetCard).backgroundColor, 1f);
+        RectTransform content = CreateLayoutPanel("RoundInfoContentCard", tabsArea, GetSurfaceStyle(SurfaceRole.InsetCard).backgroundColor, 1f);
         ConfigureVerticalLayout(content, 12, 22, TextAnchor.UpperLeft);
         ApplySurfaceStyle(content.gameObject, SurfaceRole.InsetCard);
+        content.gameObject.AddComponent<RectMask2D>();
         refs.roundInfoText = CreateText(content, "RoundInfoText", "Select a tab to view the current run info.", fontAsset, TextRole.Body, 180f, 1f);
 
         return panel.gameObject;
@@ -855,46 +920,23 @@ public static class PrototypeMenuSceneBuilder
 
     private static TMP_Text CreateCoinsHudText(Transform parent, TMP_FontAsset fontAsset)
     {
-        RectTransform rect = CreateRect("CoinsText", parent);
-        rect.anchorMin = new Vector2(0f, 1f);
-        rect.anchorMax = new Vector2(0f, 1f);
-        rect.pivot = new Vector2(0f, 1f);
-        rect.anchoredPosition = new Vector2(24f, -24f);
-        rect.sizeDelta = new Vector2(260f, 100f);
-
-        TextMeshProUGUI text = rect.gameObject.AddComponent<TextMeshProUGUI>();
-        ApplyTextStyle(text, fontAsset, TextRole.HudResource);
-        text.text = "Coins\n-";
+        TMP_Text text = CreateText(parent, "CoinsText", "Coins: -", fontAsset, TextRole.HudStat, RoundHudStatHeight, 0f, AccentTextColor);
+        ConfigureFixedWidth(text.gameObject, RoundHudStatWidth);
+        text.alignment = TextAlignmentOptions.MidlineLeft;
+        text.enableAutoSizing = true;
+        text.fontSizeMin = 18f;
+        text.fontSizeMax = 22f;
         return text;
     }
 
     private static TMP_Text CreateScoreHudText(Transform parent, TMP_FontAsset fontAsset)
     {
-        RectTransform rect = CreateRect("ScoreText", parent);
-        rect.anchorMin = new Vector2(0.5f, 1f);
-        rect.anchorMax = new Vector2(0.5f, 1f);
-        rect.pivot = new Vector2(0.5f, 1f);
-        rect.anchoredPosition = new Vector2(0f, -104f);
-        rect.sizeDelta = new Vector2(320f, 110f);
-
-        TextMeshProUGUI text = rect.gameObject.AddComponent<TextMeshProUGUI>();
-        ApplyTextStyle(text, fontAsset, TextRole.HudScore);
-        text.text = "Score\n-";
-        return text;
-    }
-
-    private static TMP_Text CreateHudText(Transform parent, TMP_FontAsset fontAsset)
-    {
-        RectTransform rect = CreateRect("RollText", parent);
-        rect.anchorMin = new Vector2(0.5f, 1f);
-        rect.anchorMax = new Vector2(0.5f, 1f);
-        rect.pivot = new Vector2(0.5f, 1f);
-        rect.anchoredPosition = new Vector2(0f, -210f);
-        rect.sizeDelta = new Vector2(720f, 132f);
-
-        TextMeshProUGUI text = rect.gameObject.AddComponent<TextMeshProUGUI>();
-        ApplyTextStyle(text, fontAsset, TextRole.RollResult);
-        text.text = "Press your roll binding to roll.\nStarting Coins: -\nCash out after any resolved roll.";
+        TMP_Text text = CreateText(parent, "ScoreText", "Score: -", fontAsset, TextRole.HudStat, RoundHudStatHeight);
+        ConfigureFixedWidth(text.gameObject, RoundHudStatWidth);
+        text.alignment = TextAlignmentOptions.MidlineLeft;
+        text.enableAutoSizing = true;
+        text.fontSizeMin = 18f;
+        text.fontSizeMax = 22f;
         return text;
     }
 
@@ -1341,6 +1383,14 @@ public static class PrototypeMenuSceneBuilder
         layoutElement.preferredHeight = preferredHeight;
         layoutElement.flexibleHeight = flexibleHeight;
         layoutElement.flexibleWidth = 1f;
+
+        if (role == TextRole.HudStat)
+        {
+            text.enableAutoSizing = true;
+            text.fontSizeMin = 18f;
+            text.fontSizeMax = 22f;
+        }
+
         return text;
     }
 
@@ -1651,6 +1701,18 @@ public static class PrototypeMenuSceneBuilder
         TextMeshProUGUI labelText = labelRect.gameObject.AddComponent<TextMeshProUGUI>();
         labelText.text = label;
         ApplyTextStyle(labelText, fontAsset, textRole, buttonStyle.textColor, labelFontSize);
+        if (textRole == TextRole.UtilityLabel)
+        {
+            labelText.enableAutoSizing = true;
+            labelText.fontSizeMin = 18f;
+            labelText.fontSizeMax = labelFontSize;
+        }
+        else if (textRole == TextRole.HudStat)
+        {
+            labelText.enableAutoSizing = true;
+            labelText.fontSizeMin = 18f;
+            labelText.fontSizeMax = 22f;
+        }
         labelText.raycastTarget = false;
 
         return button;
@@ -1823,6 +1885,19 @@ public static class PrototypeMenuSceneBuilder
         text.margin = Vector4.zero;
         text.isTextObjectScaleStatic = true;
 
+        if (role == TextRole.HudStat)
+        {
+            text.enableAutoSizing = true;
+            text.fontSizeMin = 18f;
+            text.fontSizeMax = 22f;
+        }
+        else if (role == TextRole.UtilityLabel)
+        {
+            text.enableAutoSizing = true;
+            text.fontSizeMin = 18f;
+            text.fontSizeMax = style.fontSize;
+        }
+
         Shadow existingShadow = text.GetComponent<Shadow>();
         if (existingShadow != null)
         {
@@ -1850,13 +1925,17 @@ public static class PrototypeMenuSceneBuilder
             case TextRole.Body:
                 return new TextStyleDefinition(BodyFontSize, FontStyles.Normal, TextAlignmentOptions.TopLeft, BodyTextColor, TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1.08f);
             case TextRole.UtilityLabel:
-                return new TextStyleDefinition(UtilityButtonFontSize, FontStyles.Bold, TextAlignmentOptions.Center, new Color(0.96f, 0.97f, 0.98f, 1f), TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1f, true, new Color(0f, 0f, 0f, 0.18f), new Vector2(0f, -1f));
+                return new TextStyleDefinition(24, FontStyles.Bold, TextAlignmentOptions.Center, new Color(0.96f, 0.97f, 0.98f, 1f), TextOverflowModes.Overflow, TextWrappingModes.NoWrap, true, 1f, true, new Color(0f, 0f, 0f, 0.18f), new Vector2(0f, -1f));
             case TextRole.HudResource:
                 return new TextStyleDefinition(28, FontStyles.Bold, TextAlignmentOptions.TopLeft, BodyTextColor, TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1f, true, new Color(0f, 0f, 0f, 0.18f), new Vector2(0f, -1f));
             case TextRole.HudScore:
                 return new TextStyleDefinition(40, FontStyles.Bold, TextAlignmentOptions.Center, TitleColor, TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1.02f, true, new Color(0f, 0f, 0f, 0.24f), new Vector2(0f, -1f));
+            case TextRole.HudStat:
+                return new TextStyleDefinition(22, FontStyles.Bold, TextAlignmentOptions.MidlineLeft, BodyTextColor, TextOverflowModes.Overflow, TextWrappingModes.NoWrap, true, 1f, true, new Color(0f, 0f, 0f, 0.18f), new Vector2(0f, -1f));
+            case TextRole.CompactCardTitle:
+                return new TextStyleDefinition(30, FontStyles.Bold, TextAlignmentOptions.TopLeft, TitleColor, TextOverflowModes.Overflow, TextWrappingModes.NoWrap, true, 1f, true, new Color(0f, 0f, 0f, 0.22f), new Vector2(0f, -1f));
             case TextRole.RollResult:
-                return new TextStyleDefinition(34, FontStyles.Bold, TextAlignmentOptions.Center, Color.white, TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1.04f, true, new Color(0f, 0f, 0f, 0.22f), new Vector2(0f, -1f));
+                return new TextStyleDefinition(23, FontStyles.Bold, TextAlignmentOptions.Top, Color.white, TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1.04f, true, new Color(0f, 0f, 0f, 0.22f), new Vector2(0f, -1f));
             case TextRole.SupportingHint:
                 return new TextStyleDefinition(22, FontStyles.Italic, TextAlignmentOptions.Center, new Color(0.62f, 0.69f, 0.77f, 1f), TextOverflowModes.Overflow, TextWrappingModes.Normal, true, 1.04f);
             case TextRole.ButtonLabel:

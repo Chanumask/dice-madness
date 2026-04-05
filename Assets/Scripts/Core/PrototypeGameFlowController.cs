@@ -290,6 +290,7 @@ namespace DiceMadness.Core
             LoadUnlockedUpgrades();
             PopulateStaticPanelText();
             PushRollTextReference();
+            ApplyRunHudLayout();
             GameSettingsService.SettingsChanged -= HandleSettingsChanged;
             GameSettingsService.SettingsChanged += HandleSettingsChanged;
             GameSettingsService.ApplyToCanvasScaler(canvasScaler);
@@ -2415,12 +2416,12 @@ namespace DiceMadness.Core
         {
             if (scoreText != null)
             {
-                scoreText.text = runActive ? $"Score\n{currentScore}" : "Score\n-";
+                scoreText.text = runActive ? $"Score: {currentScore}" : "Score: -";
             }
 
             if (coinsText != null)
             {
-                coinsText.text = runActive ? $"Coins\n{runCoins}" : "Coins\n-";
+                coinsText.text = runActive ? $"Coins: {runCoins}" : "Coins: -";
             }
         }
 
@@ -2446,7 +2447,6 @@ namespace DiceMadness.Core
             rollText.text =
                 $"Press {rollBinding} to roll.\n" +
                 $"Starting Coins: {runCoins}\n" +
-                $"Spend Action: -{coinSettings.spendCoinsCost} Coins\n" +
                 "Cash out after any resolved roll.";
         }
 
@@ -2540,6 +2540,12 @@ namespace DiceMadness.Core
                 return;
             }
 
+            RectTransform panelRect = roundInfoPanelTransform as RectTransform;
+            if (panelRect != null && panelRect.GetComponent<RectMask2D>() == null)
+            {
+                panelRect.gameObject.AddComponent<RectMask2D>();
+            }
+
             if (roundInfoTitleText == null)
             {
                 roundInfoTitleText = FindChildComponent<TMP_Text>(roundInfoPanelTransform, "RoundInfoTitleText");
@@ -2550,13 +2556,58 @@ namespace DiceMadness.Core
                 roundInfoText = FindChildComponent<TMP_Text>(roundInfoPanelTransform, "RoundInfoText");
             }
 
-            Transform existingRow = FindChildTransform(roundInfoPanelTransform, "RoundInfoTabRow");
-            RectTransform tabRow = existingRow as RectTransform;
+            Transform summaryArea = FindChildTransform(roundInfoPanelTransform, "RoundInfoSummaryArea");
+            if (summaryArea == null)
+            {
+                summaryArea = CreateRuntimeRect("RoundInfoSummaryArea", roundInfoPanelTransform);
+                summaryArea.SetSiblingIndex(0);
+                ConfigureRuntimeVerticalLayout(summaryArea as RectTransform, 0, 0, TextAnchor.UpperCenter);
+                LayoutElement summaryLayout = summaryArea.gameObject.AddComponent<LayoutElement>();
+                summaryLayout.minHeight = 112f;
+                summaryLayout.preferredHeight = 112f;
+                summaryLayout.flexibleHeight = 0f;
+            }
+
+            if (summaryArea.GetComponent<RectMask2D>() == null)
+            {
+                summaryArea.gameObject.AddComponent<RectMask2D>();
+            }
+
+            Transform tabsArea = FindChildTransform(roundInfoPanelTransform, "RoundInfoTabsArea");
+            if (tabsArea == null)
+            {
+                tabsArea = CreateRuntimeRect("RoundInfoTabsArea", roundInfoPanelTransform);
+                tabsArea.SetSiblingIndex(Mathf.Min(1, roundInfoPanelTransform.childCount - 1));
+                ConfigureRuntimeVerticalLayout(tabsArea as RectTransform, 12, 0, TextAnchor.UpperLeft);
+                LayoutElement tabsLayout = tabsArea.gameObject.AddComponent<LayoutElement>();
+                tabsLayout.minHeight = 0f;
+                tabsLayout.preferredHeight = 0f;
+                tabsLayout.flexibleHeight = 1f;
+                tabsLayout.flexibleWidth = 1f;
+            }
+
+            if (rollText != null && rollText.transform.parent != summaryArea)
+            {
+                rollText.transform.SetParent(summaryArea, false);
+            }
+
+            if (rollText != null)
+            {
+                rollText.transform.SetSiblingIndex(0);
+                ConfigureRuntimeRollText(rollText);
+            }
+
+            if (roundInfoTitleText != null && roundInfoTitleText.transform.parent != tabsArea)
+            {
+                roundInfoTitleText.transform.SetParent(tabsArea, false);
+            }
+
+            Transform tabRow = FindChildTransform(tabsArea, "RoundInfoTabRow");
             if (tabRow == null)
             {
-                tabRow = CreateRuntimeRect("RoundInfoTabRow", roundInfoPanelTransform);
-                tabRow.SetSiblingIndex(Mathf.Min(1, roundInfoPanelTransform.childCount - 1));
-                ConfigureRuntimeHorizontalLayout(tabRow, 8, 0);
+                tabRow = CreateRuntimeRect("RoundInfoTabRow", tabsArea);
+                tabRow.SetSiblingIndex(Mathf.Min(1, tabsArea.childCount - 1));
+                ConfigureRuntimeHorizontalLayout(tabRow as RectTransform, 8, 0);
 
                 LayoutElement rowLayout = tabRow.gameObject.AddComponent<LayoutElement>();
                 rowLayout.minHeight = 36f;
@@ -2564,10 +2615,10 @@ namespace DiceMadness.Core
                 rowLayout.flexibleWidth = 1f;
             }
 
-            roundInfoScoringButton = roundInfoScoringButton ?? FindChildComponent<Button>(roundInfoPanelTransform, "RoundInfoScoringButton");
-            roundInfoCoinsButton = roundInfoCoinsButton ?? FindChildComponent<Button>(roundInfoPanelTransform, "RoundInfoCoinsButton");
-            roundInfoActiveEffectsButton = roundInfoActiveEffectsButton ?? FindChildComponent<Button>(roundInfoPanelTransform, "RoundInfoActiveEffectsButton");
-            roundInfoRunInfoButton = roundInfoRunInfoButton ?? FindChildComponent<Button>(roundInfoPanelTransform, "RoundInfoRunInfoButton");
+            roundInfoScoringButton = roundInfoScoringButton ?? FindChildComponent<Button>(tabsArea, "RoundInfoScoringButton");
+            roundInfoCoinsButton = roundInfoCoinsButton ?? FindChildComponent<Button>(tabsArea, "RoundInfoCoinsButton");
+            roundInfoActiveEffectsButton = roundInfoActiveEffectsButton ?? FindChildComponent<Button>(tabsArea, "RoundInfoActiveEffectsButton");
+            roundInfoRunInfoButton = roundInfoRunInfoButton ?? FindChildComponent<Button>(tabsArea, "RoundInfoRunInfoButton");
 
             if (roundInfoScoringButton == null)
             {
@@ -2587,6 +2638,73 @@ namespace DiceMadness.Core
             if (roundInfoRunInfoButton == null)
             {
                 roundInfoRunInfoButton = CreateRuntimeRoundInfoTabButton(tabRow, "RoundInfoRunInfoButton", "Run Info");
+            }
+
+            if (roundInfoScoringButton != null && roundInfoScoringButton.transform.parent != tabRow)
+            {
+                roundInfoScoringButton.transform.SetParent(tabRow, false);
+            }
+            if (roundInfoCoinsButton != null && roundInfoCoinsButton.transform.parent != tabRow)
+            {
+                roundInfoCoinsButton.transform.SetParent(tabRow, false);
+            }
+            if (roundInfoActiveEffectsButton != null && roundInfoActiveEffectsButton.transform.parent != tabRow)
+            {
+                roundInfoActiveEffectsButton.transform.SetParent(tabRow, false);
+            }
+            if (roundInfoRunInfoButton != null && roundInfoRunInfoButton.transform.parent != tabRow)
+            {
+                roundInfoRunInfoButton.transform.SetParent(tabRow, false);
+            }
+
+            Transform divider = FindChildTransform(tabsArea, "Divider");
+            if (divider == null)
+            {
+                Transform orphanedDivider = FindChildTransform(roundInfoPanelTransform, "Divider");
+                if (orphanedDivider != null)
+                {
+                    orphanedDivider.SetParent(tabsArea, false);
+                    divider = orphanedDivider;
+                }
+            }
+
+            if (divider == null)
+            {
+                divider = CreateRuntimeRect("Divider", tabsArea);
+                LayoutElement dividerLayout = divider.gameObject.AddComponent<LayoutElement>();
+                dividerLayout.minHeight = 2f;
+                dividerLayout.preferredHeight = 2f;
+                dividerLayout.flexibleWidth = 1f;
+            }
+
+            Transform contentCard = FindChildTransform(tabsArea, "RoundInfoContentCard");
+            if (contentCard == null)
+            {
+                Transform orphanedContentCard = FindChildTransform(roundInfoPanelTransform, "RoundInfoContentCard");
+                if (orphanedContentCard != null)
+                {
+                    orphanedContentCard.SetParent(tabsArea, false);
+                    contentCard = orphanedContentCard;
+                }
+            }
+
+            if (contentCard == null)
+            {
+                contentCard = CreateRuntimeRect("RoundInfoContentCard", tabsArea);
+                LayoutElement contentLayout = contentCard.gameObject.AddComponent<LayoutElement>();
+                contentLayout.minHeight = 180f;
+                contentLayout.flexibleHeight = 1f;
+                contentLayout.flexibleWidth = 1f;
+            }
+
+            if (contentCard.GetComponent<RectMask2D>() == null)
+            {
+                contentCard.gameObject.AddComponent<RectMask2D>();
+            }
+
+            if (roundInfoText != null && roundInfoText.transform.parent != contentCard)
+            {
+                roundInfoText.transform.SetParent(contentCard, false);
             }
 
             BindRoundInfoTabButtons();
@@ -2855,6 +2973,358 @@ namespace DiceMadness.Core
             {
                 target.SetActive(active);
             }
+        }
+
+        private void ApplyRunHudLayout()
+        {
+            if (roundUtilityBar != null)
+            {
+                RectTransform barRect = roundUtilityBar.transform as RectTransform;
+                if (barRect != null)
+                {
+                    barRect.anchorMin = new Vector2(0.14f, 1f);
+                    barRect.anchorMax = new Vector2(0.86f, 1f);
+                    barRect.pivot = new Vector2(0.5f, 1f);
+                    barRect.anchoredPosition = new Vector2(0f, -24f);
+                    barRect.sizeDelta = new Vector2(0f, 68f);
+                }
+
+                HorizontalLayoutGroup layout = roundUtilityBar.GetComponent<HorizontalLayoutGroup>();
+                if (layout != null)
+                {
+                    layout.spacing = 14f;
+                    layout.padding = new RectOffset(16, 16, 16, 16);
+                    layout.childAlignment = TextAnchor.MiddleLeft;
+                    layout.childControlWidth = true;
+                    layout.childControlHeight = true;
+                    layout.childForceExpandWidth = false;
+                    layout.childForceExpandHeight = false;
+                }
+
+                Transform statsGroup = FindChildTransform(roundUtilityBar.transform, "RoundHudStatsGroup");
+                if (statsGroup == null)
+                {
+                    statsGroup = CreateRunHudStatsGroup(roundUtilityBar.transform);
+                }
+
+                Transform spacer = FindChildTransform(roundUtilityBar.transform, "RoundHudSpacer");
+                if (spacer == null)
+                {
+                    spacer = CreateRunHudSpacer(roundUtilityBar.transform);
+                }
+
+                if (statsGroup != null)
+                {
+                    statsGroup.SetAsFirstSibling();
+                }
+
+                if (spacer != null)
+                {
+                    spacer.SetSiblingIndex(1);
+                }
+
+                if (coinsText != null && coinsText.transform.parent != statsGroup)
+                {
+                    coinsText.transform.SetParent(statsGroup, false);
+                }
+
+                if (scoreText != null && scoreText.transform.parent != statsGroup)
+                {
+                    scoreText.transform.SetParent(statsGroup, false);
+                }
+
+                if (coinsText != null)
+                {
+                    coinsText.text = runActive ? $"Coins: {runCoins}" : "Coins: -";
+                    ConfigureRuntimeHudStatText(coinsText, 172f);
+                }
+
+                if (scoreText != null)
+                {
+                    scoreText.text = runActive ? $"Score: {currentScore}" : "Score: -";
+                    ConfigureRuntimeHudStatText(scoreText, 172f);
+                }
+
+                ConfigureRuntimeButtonLabelFit(roundChallengesButton, 18f, 24f);
+                ConfigureRuntimeButtonLabelFit(roundSettingsButton, 18f, 24f);
+                ConfigureRuntimeButtonLabelFit(roundSpendCoinsButton, 18f, 24f);
+                ConfigureRuntimeButtonLabelFit(roundCashOutButton, 18f, 24f);
+                ConfigureRuntimeButtonLabelFit(roundMainMenuButton, 18f, 24f);
+            }
+
+            if (roundInfoPanel != null)
+            {
+                RectTransform panelRect = roundInfoPanel.transform as RectTransform;
+                if (panelRect != null)
+                {
+                    panelRect.anchorMin = new Vector2(0f, 0.5f);
+                    panelRect.anchorMax = new Vector2(0f, 0.5f);
+                    panelRect.pivot = new Vector2(0f, 0.5f);
+                    panelRect.anchoredPosition = new Vector2(28f, 8f);
+                    panelRect.sizeDelta = new Vector2(380f, 560f);
+                }
+
+                if (roundInfoPanel.GetComponent<RectMask2D>() == null)
+                {
+                    roundInfoPanel.AddComponent<RectMask2D>();
+                }
+
+                VerticalLayoutGroup layout = roundInfoPanel.GetComponent<VerticalLayoutGroup>();
+                if (layout != null)
+                {
+                    layout.spacing = 14f;
+                    layout.padding = new RectOffset(24, 24, 24, 24);
+                    layout.childAlignment = TextAnchor.UpperLeft;
+                    layout.childControlWidth = true;
+                    layout.childControlHeight = true;
+                    layout.childForceExpandWidth = true;
+                    layout.childForceExpandHeight = false;
+                }
+
+                Transform summaryArea = FindChildTransform(roundInfoPanel.transform, "RoundInfoSummaryArea");
+                if (summaryArea == null)
+                {
+                    summaryArea = CreateRuntimeRect("RoundInfoSummaryArea", roundInfoPanel.transform);
+                    summaryArea.SetSiblingIndex(0);
+                    ConfigureRuntimeVerticalLayout(summaryArea as RectTransform, 0, 0, TextAnchor.UpperCenter);
+                    LayoutElement summaryLayout = summaryArea.gameObject.AddComponent<LayoutElement>();
+                    summaryLayout.minHeight = 112f;
+                    summaryLayout.preferredHeight = 112f;
+                    summaryLayout.flexibleHeight = 0f;
+                }
+
+                if (summaryArea.GetComponent<RectMask2D>() == null)
+                {
+                    summaryArea.gameObject.AddComponent<RectMask2D>();
+                }
+
+                Transform tabsArea = FindChildTransform(roundInfoPanel.transform, "RoundInfoTabsArea");
+                if (tabsArea == null)
+                {
+                    tabsArea = CreateRuntimeRect("RoundInfoTabsArea", roundInfoPanel.transform);
+                    tabsArea.SetSiblingIndex(Mathf.Min(1, roundInfoPanel.transform.childCount - 1));
+                    ConfigureRuntimeVerticalLayout(tabsArea as RectTransform, 12, 0, TextAnchor.UpperLeft);
+                    LayoutElement tabsLayout = tabsArea.gameObject.AddComponent<LayoutElement>();
+                    tabsLayout.minHeight = 0f;
+                    tabsLayout.preferredHeight = 0f;
+                    tabsLayout.flexibleHeight = 1f;
+                    tabsLayout.flexibleWidth = 1f;
+                }
+
+                if (rollText != null && rollText.transform.parent != summaryArea)
+                {
+                    rollText.transform.SetParent(summaryArea, false);
+                }
+
+                if (rollText != null)
+                {
+                    rollText.transform.SetSiblingIndex(0);
+                    ConfigureRuntimeRollText(rollText);
+                }
+
+                if (roundInfoTitleText != null && roundInfoTitleText.transform.parent != tabsArea)
+                {
+                    roundInfoTitleText.transform.SetParent(tabsArea, false);
+                }
+
+                Transform tabRow = FindChildTransform(tabsArea, "RoundInfoTabRow");
+                if (tabRow == null)
+                {
+                    tabRow = CreateRuntimeRect("RoundInfoTabRow", tabsArea);
+                    tabRow.SetSiblingIndex(Mathf.Min(1, tabsArea.childCount - 1));
+                    ConfigureRuntimeHorizontalLayout(tabRow as RectTransform, 8, 0);
+                    LayoutElement rowLayout = tabRow.gameObject.AddComponent<LayoutElement>();
+                    rowLayout.minHeight = 36f;
+                    rowLayout.preferredHeight = 36f;
+                    rowLayout.flexibleWidth = 1f;
+                }
+
+                if (roundInfoScoringButton != null && roundInfoScoringButton.transform.parent != tabRow)
+                {
+                    roundInfoScoringButton.transform.SetParent(tabRow, false);
+                }
+                if (roundInfoCoinsButton != null && roundInfoCoinsButton.transform.parent != tabRow)
+                {
+                    roundInfoCoinsButton.transform.SetParent(tabRow, false);
+                }
+                if (roundInfoActiveEffectsButton != null && roundInfoActiveEffectsButton.transform.parent != tabRow)
+                {
+                    roundInfoActiveEffectsButton.transform.SetParent(tabRow, false);
+                }
+                if (roundInfoRunInfoButton != null && roundInfoRunInfoButton.transform.parent != tabRow)
+                {
+                    roundInfoRunInfoButton.transform.SetParent(tabRow, false);
+                }
+
+                Transform divider = FindChildTransform(tabsArea, "Divider");
+                if (divider == null)
+                {
+                    Transform orphanedDivider = FindChildTransform(roundInfoPanel.transform, "Divider");
+                    if (orphanedDivider != null)
+                    {
+                        orphanedDivider.SetParent(tabsArea, false);
+                        divider = orphanedDivider;
+                    }
+                }
+
+                if (divider == null)
+                {
+                    divider = CreateRuntimeRect("Divider", tabsArea);
+                    LayoutElement dividerLayout = divider.gameObject.AddComponent<LayoutElement>();
+                    dividerLayout.minHeight = 2f;
+                    dividerLayout.preferredHeight = 2f;
+                    dividerLayout.flexibleWidth = 1f;
+                }
+
+                Transform contentCard = FindChildTransform(tabsArea, "RoundInfoContentCard");
+                if (contentCard == null)
+                {
+                    Transform orphanedContentCard = FindChildTransform(roundInfoPanel.transform, "RoundInfoContentCard");
+                    if (orphanedContentCard != null)
+                    {
+                        orphanedContentCard.SetParent(tabsArea, false);
+                        contentCard = orphanedContentCard;
+                    }
+                }
+
+                if (contentCard == null)
+                {
+                    contentCard = CreateRuntimeRect("RoundInfoContentCard", tabsArea);
+                    LayoutElement contentLayout = contentCard.gameObject.AddComponent<LayoutElement>();
+                    contentLayout.minHeight = 180f;
+                    contentLayout.flexibleHeight = 1f;
+                    contentLayout.flexibleWidth = 1f;
+                }
+
+                if (contentCard.GetComponent<RectMask2D>() == null)
+                {
+                    contentCard.gameObject.AddComponent<RectMask2D>();
+                }
+
+                if (roundInfoText != null && roundInfoText.transform.parent != contentCard)
+                {
+                    roundInfoText.transform.SetParent(contentCard, false);
+                }
+            }
+
+            if (roundUtilityBar != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(roundUtilityBar.transform as RectTransform);
+            }
+
+            if (roundInfoPanel != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(roundInfoPanel.transform as RectTransform);
+            }
+        }
+
+        private Transform CreateRunHudStatsGroup(Transform parent)
+        {
+            RectTransform group = CreateRuntimeRect("RoundHudStatsGroup", parent);
+            ConfigureRuntimeHorizontalLayout(group, 12, 0);
+
+            HorizontalLayoutGroup layout = group.GetComponent<HorizontalLayoutGroup>();
+            if (layout != null)
+            {
+                layout.childAlignment = TextAnchor.MiddleLeft;
+                layout.childForceExpandWidth = false;
+                layout.childForceExpandHeight = false;
+            }
+
+            LayoutElement layoutElement = group.gameObject.AddComponent<LayoutElement>();
+            layoutElement.minWidth = 360f;
+            layoutElement.preferredWidth = 360f;
+            layoutElement.minHeight = 68f;
+            layoutElement.preferredHeight = 68f;
+            layoutElement.flexibleWidth = 0f;
+            return group;
+        }
+
+        private Transform CreateRunHudSpacer(Transform parent)
+        {
+            RectTransform spacer = CreateRuntimeRect("RoundHudSpacer", parent);
+            LayoutElement layoutElement = spacer.gameObject.AddComponent<LayoutElement>();
+            layoutElement.minWidth = 0f;
+            layoutElement.preferredWidth = 0f;
+            layoutElement.flexibleWidth = 1f;
+            return spacer;
+        }
+
+        private static void ConfigureRuntimeHudStatText(TMP_Text text, float width)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            text.alignment = TextAlignmentOptions.MidlineLeft;
+            text.fontSize = 22f;
+            text.enableAutoSizing = true;
+            text.fontSizeMin = 18f;
+            text.fontSizeMax = 22f;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.overflowMode = TextOverflowModes.Overflow;
+            text.lineSpacing = 1f;
+
+            LayoutElement layoutElement = text.GetComponent<LayoutElement>();
+            if (layoutElement != null)
+            {
+                layoutElement.minWidth = width;
+                layoutElement.preferredWidth = width;
+                layoutElement.minHeight = 40f;
+                layoutElement.preferredHeight = 40f;
+                layoutElement.flexibleWidth = 0f;
+            }
+        }
+
+        private static void ConfigureRuntimeRollText(TMP_Text text)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            text.alignment = TextAlignmentOptions.Top;
+            text.fontSize = 23f;
+            text.textWrappingMode = TextWrappingModes.Normal;
+            text.overflowMode = TextOverflowModes.Overflow;
+            text.lineSpacing = 1.02f;
+
+            LayoutElement layoutElement = text.GetComponent<LayoutElement>();
+            if (layoutElement == null)
+            {
+                layoutElement = text.gameObject.AddComponent<LayoutElement>();
+            }
+
+            layoutElement.minWidth = 0f;
+            layoutElement.preferredWidth = 0f;
+            layoutElement.flexibleWidth = 1f;
+            if (layoutElement != null)
+            {
+                layoutElement.minHeight = 104f;
+                layoutElement.preferredHeight = 104f;
+                layoutElement.flexibleHeight = 0f;
+            }
+        }
+
+        private static void ConfigureRuntimeButtonLabelFit(Button button, float minFontSize, float maxFontSize)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            TMP_Text labelText = button.GetComponentInChildren<TMP_Text>(true);
+            if (labelText == null)
+            {
+                return;
+            }
+
+            labelText.enableAutoSizing = true;
+            labelText.fontSizeMin = minFontSize;
+            labelText.fontSizeMax = maxFontSize;
+            labelText.textWrappingMode = TextWrappingModes.NoWrap;
+            labelText.overflowMode = TextOverflowModes.Overflow;
         }
 
         private static void BindButton(Button button, UnityEngine.Events.UnityAction action)
