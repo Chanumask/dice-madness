@@ -711,10 +711,10 @@ public static class PrototypeMenuSceneBuilder
             backLayout.flexibleWidth = 0f;
         }
 
-        RectTransform tabs = CreateLayoutRow("ShopTabRow", card, 10, 58f);
-        refs.shopDiceUnlocksButton = CreateSecondaryButton(tabs, "DiceUnlocksButton", "Dice Unlocks", 58f, fontAsset, 21);
-        refs.shopEfficiencyButton = CreateSecondaryButton(tabs, "EfficiencyButton", "Efficiency / Automation", 58f, fontAsset, 21);
-        refs.shopScoreMultipliersButton = CreateSecondaryButton(tabs, "ScoreMultipliersButton", "Score Multipliers", 58f, fontAsset, 21);
+        RectTransform tabs = CreateLayoutRow("ShopTabRow", card, 6, 42f);
+        refs.shopDiceUnlocksButton = CreateSecondaryButton(tabs, "DiceUnlocksButton", "Dice Unlocks", 42f, fontAsset, 16);
+        refs.shopEfficiencyButton = CreateSecondaryButton(tabs, "EfficiencyButton", "Efficiency / Automation", 42f, fontAsset, 16);
+        refs.shopScoreMultipliersButton = CreateSecondaryButton(tabs, "ScoreMultipliersButton", "Score Multipliers", 42f, fontAsset, 16);
 
         RectTransform infoCard = CreateLayoutPanel("ShopContentCard", card, GetSurfaceStyle(SurfaceRole.InsetCard).backgroundColor, 1f);
         ConfigureVerticalLayout(infoCard, 12, 18, TextAnchor.UpperLeft);
@@ -1211,7 +1211,13 @@ public static class PrototypeMenuSceneBuilder
         panel.anchorMax = new Vector2(0.5f, 0.5f);
         panel.pivot = new Vector2(0f, 1f);
         panel.anchoredPosition = Vector2.zero;
-        panel.sizeDelta = new Vector2(320f, 170f);
+        panel.sizeDelta = new Vector2(500f, 280f);
+
+        LayoutElement panelLayout = panel.gameObject.AddComponent<LayoutElement>();
+        panelLayout.minWidth = 500f;
+        panelLayout.preferredWidth = 500f;
+        panelLayout.minHeight = 280f;
+        panelLayout.preferredHeight = 280f;
 
         CanvasGroup canvasGroup = layer.gameObject.AddComponent<CanvasGroup>();
         canvasGroup.interactable = false;
@@ -1230,14 +1236,14 @@ public static class PrototypeMenuSceneBuilder
         outline.effectDistance = new Vector2(1f, -1f);
         outline.useGraphicAlpha = true;
 
-        ConfigureVerticalLayout(panel, 8, 16, TextAnchor.UpperLeft);
+        ConfigureVerticalLayout(panel, 10, 20, TextAnchor.UpperLeft);
 
-        TMP_Text title = CreateText(panel, "ShopTooltipTitleText", "Tooltip", fontAsset, TextRole.CardTitle, 34f);
-        TMP_Text body = CreateText(panel, "ShopTooltipBodyText", "Tooltip body", fontAsset, TextRole.Body, 96f, 1f);
+        TMP_Text title = CreateText(panel, "ShopTooltipTitleText", "Tooltip", fontAsset, TextRole.CardTitle, 38f);
+        TMP_Text body = CreateText(panel, "ShopTooltipBodyText", "Tooltip body", fontAsset, TextRole.Body, 150f, 1f);
         if (body != null)
         {
-            body.fontSize = 18;
-            body.lineSpacing = 1.02f;
+            body.fontSize = 19;
+            body.lineSpacing = 1.06f;
         }
 
         UiTooltipPresenter presenter = panel.gameObject.AddComponent<UiTooltipPresenter>();
@@ -1645,6 +1651,7 @@ public static class PrototypeMenuSceneBuilder
         TextMeshProUGUI labelText = labelRect.gameObject.AddComponent<TextMeshProUGUI>();
         labelText.text = label;
         ApplyTextStyle(labelText, fontAsset, textRole, buttonStyle.textColor, labelFontSize);
+        labelText.raycastTarget = false;
 
         return button;
     }

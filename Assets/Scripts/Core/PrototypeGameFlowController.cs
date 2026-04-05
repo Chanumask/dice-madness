@@ -153,6 +153,7 @@ namespace DiceMadness.Core
         [SerializeField] private Button mainMenuSettingsButton;
 
         [Header("Shop")]
+        [SerializeField] private float shopNodeWidth = 185f;
         [SerializeField] private Button shopDiceUnlocksButton;
         [SerializeField] private Button shopEfficiencyButton;
         [SerializeField] private Button shopScoreMultipliersButton;
@@ -418,6 +419,9 @@ namespace DiceMadness.Core
             roundSpendCoinsButton ??= FindChildComponent<Button>(searchRoot, "RoundSpendCoinsButton");
             roundCashOutButton ??= FindChildComponent<Button>(searchRoot, "RoundCashOutButton");
             roundMainMenuButton ??= FindChildComponent<Button>(searchRoot, "RoundMainMenuButton");
+
+            NormalizeDropdownArrow(resolutionDropdown);
+            NormalizeDropdownArrow(displayModeDropdown);
         }
 
         private void EnsureEventSystem()
@@ -610,30 +614,30 @@ namespace DiceMadness.Core
                         : GameSettingsService.GetBindingDisplayName(settings.backKey);
                 }
 
-                if (resolutionDropdown != null)
-                {
-                    resolutionDropdown.ClearOptions();
-                    List<string> options = new List<string>();
-                    IReadOnlyList<ResolutionOption> resolutions = GameSettingsService.AvailableResolutions;
+            if (resolutionDropdown != null)
+            {
+                resolutionDropdown.ClearOptions();
+                List<string> options = new List<string>();
+                IReadOnlyList<ResolutionOption> resolutions = GameSettingsService.AvailableResolutions;
                     for (int i = 0; i < resolutions.Count; i++)
                     {
                         options.Add(resolutions[i].ToString());
                     }
 
-                    resolutionDropdown.AddOptions(options);
-                    resolutionDropdown.SetValueWithoutNotify(GameSettingsService.GetSelectedResolutionIndex());
-                    resolutionDropdown.RefreshShownValue();
-                    NormalizeDropdownArrow(resolutionDropdown);
-                }
+                resolutionDropdown.AddOptions(options);
+                resolutionDropdown.SetValueWithoutNotify(GameSettingsService.GetSelectedResolutionIndex());
+                NormalizeDropdownArrow(resolutionDropdown);
+                resolutionDropdown.RefreshShownValue();
+            }
 
-                if (displayModeDropdown != null)
-                {
-                    displayModeDropdown.ClearOptions();
-                    displayModeDropdown.AddOptions(new List<string> { "Windowed", "Borderless", "Fullscreen" });
-                    displayModeDropdown.SetValueWithoutNotify((int)settings.displayMode);
-                    displayModeDropdown.RefreshShownValue();
-                    NormalizeDropdownArrow(displayModeDropdown);
-                }
+            if (displayModeDropdown != null)
+            {
+                displayModeDropdown.ClearOptions();
+                displayModeDropdown.AddOptions(new List<string> { "Windowed", "Borderless", "Fullscreen" });
+                displayModeDropdown.SetValueWithoutNotify((int)settings.displayMode);
+                NormalizeDropdownArrow(displayModeDropdown);
+                displayModeDropdown.RefreshShownValue();
+            }
 
                 if (vSyncToggle != null)
                 {
@@ -1104,6 +1108,7 @@ namespace DiceMadness.Core
             labelRect.offsetMax = new Vector2(-12f, -8f);
             TMP_Text labelText = CreateRuntimeTextOnRect(labelRect, label, (int)fontSize, FontStyles.Bold, TextAlignmentOptions.Center, Color.white);
             labelText.alignment = TextAlignmentOptions.Center;
+            labelText.raycastTarget = false;
             return button;
         }
 
@@ -1618,6 +1623,7 @@ namespace DiceMadness.Core
 
             RefreshShardsText();
             UpdateShopTabInteractivity();
+            RefreshShopTabSizing();
             RefreshShopTabTooltips();
             shopTooltipPresenter?.Hide();
             RebuildShopTreeUi(definition);
@@ -1641,6 +1647,62 @@ namespace DiceMadness.Core
             }
 
             RefreshShopResetButton();
+        }
+
+        private void RefreshShopTabSizing()
+        {
+            RectTransform row = shopDiceUnlocksButton != null ? shopDiceUnlocksButton.transform.parent as RectTransform : null;
+            if (row != null)
+            {
+                LayoutElement rowLayout = row.GetComponent<LayoutElement>();
+                if (rowLayout != null)
+                {
+                    rowLayout.minHeight = 42f;
+                    rowLayout.preferredHeight = 42f;
+                }
+
+                HorizontalLayoutGroup rowGroup = row.GetComponent<HorizontalLayoutGroup>();
+                if (rowGroup != null)
+                {
+                    rowGroup.spacing = 6f;
+                    rowGroup.padding = new RectOffset(0, 0, 0, 0);
+                    rowGroup.childAlignment = TextAnchor.MiddleCenter;
+                    rowGroup.childControlWidth = true;
+                    rowGroup.childControlHeight = true;
+                    rowGroup.childForceExpandWidth = true;
+                    rowGroup.childForceExpandHeight = false;
+                }
+            }
+
+            TuneShopTabButton(shopDiceUnlocksButton);
+            TuneShopTabButton(shopEfficiencyButton);
+            TuneShopTabButton(shopScoreMultipliersButton);
+        }
+
+        private static void TuneShopTabButton(Button button)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            LayoutElement layout = button.GetComponent<LayoutElement>();
+            if (layout != null)
+            {
+                layout.minHeight = 42f;
+                layout.preferredHeight = 42f;
+                layout.flexibleWidth = 1f;
+            }
+
+            TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
+            if (label != null)
+            {
+                label.fontSize = 16f;
+                label.textWrappingMode = TextWrappingModes.NoWrap;
+                label.overflowMode = TextOverflowModes.Ellipsis;
+                label.alignment = TextAlignmentOptions.Center;
+                label.raycastTarget = false;
+            }
         }
 
         private void RefreshShopTabTooltips()
@@ -1702,17 +1764,17 @@ namespace DiceMadness.Core
         {
             RectTransform row = CreateUiRect(name, parent);
             HorizontalLayoutGroup layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 16f;
+            layout.spacing = 18f;
             layout.childAlignment = TextAnchor.UpperCenter;
-            layout.childControlWidth = false;
+            layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
             layout.padding = new RectOffset(0, 0, 0, 0);
 
             LayoutElement element = row.gameObject.AddComponent<LayoutElement>();
-            element.minHeight = 172f;
-            element.preferredHeight = 172f;
+            element.minHeight = 112f;
+            element.preferredHeight = 112f;
             element.flexibleWidth = 1f;
 
             return row;
@@ -1739,26 +1801,28 @@ namespace DiceMadness.Core
 
             Button button = card.gameObject.AddComponent<Button>();
             button.targetGraphic = background;
-            button.interactable = canPurchase;
+            button.interactable = true;
+            button.navigation = new Navigation { mode = Navigation.Mode.None };
             ApplyShopNodeButtonColors(button, nodeState, background.color);
 
             LayoutElement element = card.gameObject.AddComponent<LayoutElement>();
-            element.minWidth = 228f;
-            element.preferredWidth = 228f;
-            element.minHeight = 136f;
-            element.preferredHeight = 136f;
+            element.minWidth = shopNodeWidth;
+            element.preferredWidth = shopNodeWidth;
+            element.minHeight = 84f;
+            element.preferredHeight = 84f;
+            element.flexibleWidth = 0f;
 
-            VerticalLayoutGroup layout = card.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 10f;
-            layout.padding = new RectOffset(14, 14, 14, 14);
-            layout.childAlignment = TextAnchor.UpperCenter;
+            HorizontalLayoutGroup layout = card.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 16f;
+            layout.padding = new RectOffset(12, 12, 12, 12);
+            layout.childAlignment = TextAnchor.MiddleLeft;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
-            layout.childForceExpandWidth = true;
+            layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 
             CreateShopNodeIcon(card, upgrade.iconLabel, nodeState);
-            CreateShopNodeText(card, "Title", upgrade.title, 24, FontStyles.Bold, TextAlignmentOptions.Center, ShopNodeTitleColor, 54f, 1f);
+            CreateShopNodeText(card, "Title", upgrade.title, 14f, FontStyles.Bold, TextAlignmentOptions.MidlineLeft, ShopNodeTitleColor, 34f, 0f, true);
 
             ConfigureTooltip(card.GetComponent<Button>(), upgrade.title, BuildUpgradeTooltip(upgrade, nodeState));
 
@@ -1778,7 +1842,8 @@ namespace DiceMadness.Core
             TextAlignmentOptions alignment,
             Color color,
             float preferredHeight,
-            float flexibleHeight = 0f)
+            float flexibleHeight = 0f,
+            bool allowWrap = false)
         {
             RectTransform rect = CreateUiRect(name, parent);
             TextMeshProUGUI text = rect.gameObject.AddComponent<TextMeshProUGUI>();
@@ -1790,17 +1855,24 @@ namespace DiceMadness.Core
             text.color = color;
             text.alignment = alignment;
             text.enableAutoSizing = false;
-            text.textWrappingMode = TextWrappingModes.Normal;
-            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.textWrappingMode = allowWrap ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
+            text.overflowMode = allowWrap ? TextOverflowModes.Overflow : TextOverflowModes.Ellipsis;
             text.extraPadding = true;
             text.lineSpacing = 1.04f;
             text.isTextObjectScaleStatic = true;
+            text.raycastTarget = false;
 
             LayoutElement element = rect.gameObject.AddComponent<LayoutElement>();
             element.minHeight = preferredHeight;
             element.preferredHeight = preferredHeight;
             element.flexibleHeight = flexibleHeight;
             element.flexibleWidth = 1f;
+            if (allowWrap)
+            {
+                element.minWidth = 0f;
+                element.preferredWidth = -1f;
+                element.flexibleWidth = 1f;
+            }
 
             return text;
         }
@@ -1809,22 +1881,24 @@ namespace DiceMadness.Core
         {
             RectTransform icon = CreateUiRect("Icon", parent);
             LayoutElement element = icon.gameObject.AddComponent<LayoutElement>();
-            element.minHeight = 44f;
-            element.preferredHeight = 44f;
-            element.minWidth = 44f;
-            element.preferredWidth = 44f;
+            element.minHeight = 52f;
+            element.preferredHeight = 52f;
+            element.minWidth = 52f;
+            element.preferredWidth = 52f;
+            element.flexibleWidth = 0f;
 
             Image background = icon.gameObject.AddComponent<Image>();
             background.color = state == ShopNodeState.Unlocked
                 ? new Color(0.22f, 0.48f, 0.34f, 1f)
                 : ShopNodeIconColor;
+            background.raycastTarget = false;
 
             Outline outline = icon.gameObject.AddComponent<Outline>();
             outline.effectColor = new Color(0.82f, 0.88f, 0.96f, 0.12f);
             outline.effectDistance = new Vector2(1f, -1f);
             outline.useGraphicAlpha = true;
 
-            TMP_Text label = CreateShopNodeText(icon, "IconLabel", iconLabel, 16, FontStyles.Bold, TextAlignmentOptions.Center, ShopNodeAccentColor, 44f);
+            TMP_Text label = CreateShopNodeText(icon, "IconLabel", iconLabel, 14, FontStyles.Bold, TextAlignmentOptions.Center, ShopNodeAccentColor, 52f, 0f, false);
             LayoutElement labelLayout = label.GetComponent<LayoutElement>();
             if (labelLayout != null)
             {
@@ -2668,6 +2742,7 @@ namespace DiceMadness.Core
             if (arrowText != null)
             {
                 arrowText.text = "v";
+                arrowText.raycastTarget = false;
             }
         }
 

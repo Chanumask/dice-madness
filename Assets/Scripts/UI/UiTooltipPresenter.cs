@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace DiceMadness.UI
 {
@@ -23,7 +24,7 @@ namespace DiceMadness.UI
 
         public void Show(string title, string body, Vector2 screenPosition)
         {
-            if (tooltipRect == null)
+            if (tooltipRect == null || containerRect == null)
             {
                 return;
             }
@@ -38,8 +39,15 @@ namespace DiceMadness.UI
                 bodyText.text = body;
             }
 
+            containerRect.gameObject.SetActive(true);
             tooltipRect.gameObject.SetActive(true);
+            if (tooltipRect.parent != null)
+            {
+                tooltipRect.parent.SetAsLastSibling();
+            }
+            tooltipRect.SetAsLastSibling();
             Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipRect);
             Move(screenPosition);
         }
 
@@ -50,8 +58,15 @@ namespace DiceMadness.UI
                 return;
             }
 
+            Canvas canvas = containerRect.GetComponentInParent<Canvas>();
+            Camera camera = null;
+            if (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            {
+                camera = canvas.worldCamera != null ? canvas.worldCamera : Camera.main;
+            }
+
             Vector2 anchoredPosition;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(containerRect, screenPosition, null, out anchoredPosition);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(containerRect, screenPosition, camera, out anchoredPosition);
 
             Vector2 size = tooltipRect.rect.size;
             Vector2 pivot = new Vector2(0f, 1f);
@@ -86,6 +101,11 @@ namespace DiceMadness.UI
 
         public void Hide()
         {
+            if (containerRect != null)
+            {
+                containerRect.gameObject.SetActive(false);
+            }
+
             if (tooltipRect != null)
             {
                 tooltipRect.gameObject.SetActive(false);
