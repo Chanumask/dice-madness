@@ -5739,6 +5739,61 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2199190000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2199190001}
+  - component: {fileID: 2199190002}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2199190002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2199190000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1c4f695ed6949b7ab0f0a3c57c9d1ea, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DiceMadness.Core.AudioManager
+  uiSource: {fileID: 0}
+  sfxSource: {fileID: 0}
+  uiClickClip: {fileID: 8300000, guid: 59fc4b6a0de9408e9edff4ec34536a74, type: 3}
+  uiConfirmClip: {fileID: 8300000, guid: 3da647613f944e8ab11cd4f3f6846d2e, type: 3}
+  uiDenyClip: {fileID: 8300000, guid: 1d03387da6b44906a4e1db7a8809b909, type: 3}
+  uiHoverClip: {fileID: 8300000, guid: 36f68ceeb4ad4640802cb4cbc8f91ee8, type: 3}
+  diceHitTableClip: {fileID: 8300000, guid: 7f6b654a763f4e588b178f82ccf93381, type: 3}
+  diceHitDiceClip: {fileID: 8300000, guid: 4bdf58282da64bb0a45af6f4f25b95c8, type: 3}
+  fullDiceRollClip: {fileID: 8300000, guid: bb5b3ad73cf7473d97a9f728813b5736, type: 3}
+  uiVolume: 1
+  sfxVolume: 1
+--- !u!4 &2199190001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2199190000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1016897041
 GameObject:
   m_ObjectHideFlags: 0

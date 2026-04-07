@@ -203,3 +203,5 @@ MonoBehaviour:
   hopHeight: 1.4
   sidewaysArc: 0.32
   spinTurnsRange: {x: 2.75, y: 4.25}
+  collisionProbeInset: 0.01
+  collisionSweepPadding: 0.02

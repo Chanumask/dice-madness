@@ -67,6 +67,12 @@ namespace DiceMadness.Core
             Back,
         }
 
+        private enum UiActionSound
+        {
+            Click,
+            Confirm,
+        }
+
         private sealed class ShopUpgradeDefinition
         {
             public string id;
@@ -478,7 +484,7 @@ namespace DiceMadness.Core
                 return;
             }
 
-            BindButton(playButton, StartRound);
+            BindButton(playButton, StartRound, UiActionSound.Confirm);
             BindButton(mainMenuShopButton, EnterMetaShop);
             BindButton(mainMenuChallengesButton, EnterChallenges);
             BindButton(mainMenuSettingsButton, EnterMetaSettings);
@@ -495,7 +501,7 @@ namespace DiceMadness.Core
             BindButton(roundChallengesButton, EnterRoundChallenges);
             BindButton(roundSettingsButton, EnterRoundSettings);
             BindButton(roundSpendCoinsButton, SpendCoinsPlaceholder);
-            BindButton(roundCashOutButton, CashOutRun);
+            BindButton(roundCashOutButton, CashOutRun, UiActionSound.Confirm);
             BindButton(roundMainMenuButton, EnterMainMenu);
 
             BindRoundInfoTabButtons();
@@ -1917,16 +1923,19 @@ namespace DiceMadness.Core
         {
             if (!shopUpgradesById.TryGetValue(upgradeId, out ShopUpgradeDefinition upgrade))
             {
+                AudioManager.Instance?.PlayUIDeny();
                 return;
             }
 
             if (unlockedUpgradeIds.Contains(upgradeId) || !ArePrerequisitesUnlocked(upgrade))
             {
+                AudioManager.Instance?.PlayUIDeny();
                 return;
             }
 
             if (shards < upgrade.shardCost)
             {
+                AudioManager.Instance?.PlayUIDeny();
                 return;
             }
 
@@ -1935,6 +1944,7 @@ namespace DiceMadness.Core
             shopResetConfirmationArmed = false;
             PlayerPrefs.SetInt(GetShopUpgradePlayerPrefsKey(upgradeId), 1);
             PlayerPrefs.Save();
+            AudioManager.Instance?.PlayUIConfirm();
             RefreshShopSection(currentShopSection);
 
             if (debugEconomyLogs)
@@ -1953,6 +1963,7 @@ namespace DiceMadness.Core
             int refundAmount = CalculateTabRefund(currentShopSection);
             if (refundAmount <= 0)
             {
+                AudioManager.Instance?.PlayUIDeny();
                 shopResetConfirmationArmed = false;
                 RefreshShopResetButton();
                 return;
@@ -1995,6 +2006,7 @@ namespace DiceMadness.Core
             shopResetConfirmationArmed = false;
             PlayerPrefs.SetInt(ShardsPlayerPrefsKey, shards);
             PlayerPrefs.Save();
+            AudioManager.Instance?.PlayUIConfirm();
             RefreshShopSection(currentShopSection);
 
             if (debugEconomyLogs)
@@ -2290,6 +2302,7 @@ namespace DiceMadness.Core
         {
             if (!CanUseRunAction())
             {
+                AudioManager.Instance?.PlayUIDeny();
                 return;
             }
 
@@ -2323,12 +2336,14 @@ namespace DiceMadness.Core
         {
             if (!CanCashOut())
             {
+                AudioManager.Instance?.PlayUIDeny();
                 return;
             }
 
             int shardAward = CalculateShardAward();
             shards += shardAward;
             SaveShards();
+            AudioManager.Instance?.PlayUIConfirm();
 
             if (debugEconomyLogs)
             {
@@ -3327,15 +3342,50 @@ namespace DiceMadness.Core
             labelText.overflowMode = TextOverflowModes.Overflow;
         }
 
-        private static void BindButton(Button button, UnityEngine.Events.UnityAction action)
+        private void BindButton(Button button, UnityEngine.Events.UnityAction action, UiActionSound sound = UiActionSound.Click)
         {
             if (button == null)
             {
                 return;
             }
 
+            EnsureButtonHoverAudio(button);
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(action);
+            button.onClick.AddListener(() =>
+            {
+                PlayUiActionSound(sound);
+                action?.Invoke();
+            });
+        }
+
+        private static void EnsureButtonHoverAudio(Button button)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            if (button.GetComponent<UiButtonHoverSound>() == null)
+            {
+                button.gameObject.AddComponent<UiButtonHoverSound>();
+            }
+        }
+
+        private static void PlayUiActionSound(UiActionSound sound)
+        {
+            AudioManager audioManager = AudioManager.Instance;
+            if (audioManager == null)
+            {
+                return;
+            }
+
+            if (sound == UiActionSound.Confirm)
+            {
+                audioManager.PlayUIConfirm();
+                return;
+            }
+
+            audioManager.PlayUIClick();
         }
 
         private static Transform FindChildTransform(Transform root, string name)

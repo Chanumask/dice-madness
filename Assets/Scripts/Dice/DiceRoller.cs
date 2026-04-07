@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace DiceMadness.Dice
@@ -7,6 +8,12 @@ namespace DiceMadness.Dice
     [RequireComponent(typeof(DiceFaceReader))]
     public class DiceRoller : MonoBehaviour
     {
+        public enum ImpactAudioType
+        {
+            Table = 0,
+            Dice = 1,
+        }
+
         // Animates a controlled roll that lands on an explicitly selected face.
         [SerializeField] private float rollDuration = 0.9f;
         [SerializeField] private float startPositionJitter = 0.25f;
@@ -14,6 +21,8 @@ namespace DiceMadness.Dice
         [SerializeField] private float hopHeight = 1.4f;
         [SerializeField] private float sidewaysArc = 0.32f;
         [SerializeField] private Vector2 spinTurnsRange = new Vector2(2.75f, 4.25f);
+        [SerializeField] private float collisionProbeInset = 0.01f;
+        [SerializeField] private float collisionSweepPadding = 0.02f;
 
         private Rigidbody cachedRigidbody;
         private BoxCollider cachedCollider;
@@ -28,6 +37,16 @@ namespace DiceMadness.Dice
         private float rollSpinDegrees;
         private float rollElapsed;
         private bool isRollAnimating;
+        private readonly HashSet<Collider> activeOverlaps = new HashSet<Collider>();
+        private readonly HashSet<Collider> overlapScratch = new HashSet<Collider>();
+        private readonly HashSet<Collider> sweepScratch = new HashSet<Collider>();
+        private readonly Collider[] overlapBuffer = new Collider[24];
+        private readonly RaycastHit[] sweepHitBuffer = new RaycastHit[24];
+        private Vector3 lastProbeCenter;
+        private Quaternion lastProbeRotation;
+        private bool hasLastProbePose;
+
+        public event System.Action<ImpactAudioType, DiceRoller> ImpactDetected;
 
         public DiceFaceReader FaceReader => cachedFaceReader;
         public float RollDuration => rollDuration;
@@ -50,6 +69,7 @@ namespace DiceMadness.Dice
             isRollAnimating = true;
             rollElapsed = 0f;
             ApplyRollPose(0f);
+            RefreshCollisionState(notifyNewContacts: false);
         }
 
         public void AdvanceOutcomeRoll(float deltaTime)
@@ -62,6 +82,7 @@ namespace DiceMadness.Dice
             rollElapsed = Mathf.Min(rollDuration, rollElapsed + deltaTime);
             float progress = rollDuration > 0f ? rollElapsed / rollDuration : 1f;
             ApplyRollPose(progress);
+            RefreshCollisionState(notifyNewContacts: true);
 
             if (progress >= 1f)
             {
@@ -72,6 +93,7 @@ namespace DiceMadness.Dice
         public void CompleteOutcomeRoll()
         {
             ApplyRollPose(1f);
+            RefreshCollisionState(notifyNewContacts: true);
             isRollAnimating = false;
         }
 
@@ -81,6 +103,8 @@ namespace DiceMadness.Dice
             CacheReferences();
             cachedRigidbody.isKinematic = true;
             cachedRigidbody.Sleep();
+            activeOverlaps.Clear();
+            hasLastProbePose = false;
         }
 
         // Repositions the die while explicitly preserving the exact landed rotation.
@@ -91,6 +115,8 @@ namespace DiceMadness.Dice
             cachedRigidbody.position = position;
             cachedRigidbody.rotation = landedRotation;
             transform.SetPositionAndRotation(position, landedRotation);
+            activeOverlaps.Clear();
+            hasLastProbePose = false;
         }
 
         // Restores the die to a stable anchor pose so menu/game transitions can start from a predictable state.
@@ -103,6 +129,7 @@ namespace DiceMadness.Dice
             cachedRigidbody.rotation = rotation;
             transform.SetPositionAndRotation(anchorPosition, rotation);
             cachedRigidbody.Sleep();
+            RefreshCollisionState(notifyNewContacts: false);
         }
 
         private void BuildRollPlan(Vector3 anchorPosition, int targetFaceIndex)
@@ -208,6 +235,126 @@ namespace DiceMadness.Dice
             {
                 cachedFaceReader = GetComponent<DiceFaceReader>();
             }
+        }
+
+        private void RefreshCollisionState(bool notifyNewContacts)
+        {
+            CacheReferences();
+
+            overlapScratch.Clear();
+            sweepScratch.Clear();
+
+            Vector3 halfExtents = GetProbeHalfExtents();
+            if (halfExtents.x <= 0f || halfExtents.y <= 0f || halfExtents.z <= 0f)
+            {
+                activeOverlaps.Clear();
+                hasLastProbePose = false;
+                return;
+            }
+
+            Vector3 center = transform.TransformPoint(cachedCollider.center);
+            Quaternion rotation = transform.rotation;
+
+            if (notifyNewContacts && hasLastProbePose)
+            {
+                Vector3 sweepDelta = center - lastProbeCenter;
+                float sweepDistance = sweepDelta.magnitude;
+
+                if (sweepDistance > 0.0001f)
+                {
+                    int sweepHitCount = Physics.BoxCastNonAlloc(
+                        lastProbeCenter,
+                        halfExtents,
+                        sweepDelta / sweepDistance,
+                        sweepHitBuffer,
+                        lastProbeRotation,
+                        sweepDistance + Mathf.Max(0f, collisionSweepPadding),
+                        Physics.DefaultRaycastLayers,
+                        QueryTriggerInteraction.Ignore);
+
+                    for (int i = 0; i < sweepHitCount; i++)
+                    {
+                        Collider other = sweepHitBuffer[i].collider;
+                        sweepHitBuffer[i] = default;
+
+                        if (other == null || other == cachedCollider || !sweepScratch.Add(other))
+                        {
+                            continue;
+                        }
+
+                        EmitImpactForCollider(other);
+                    }
+                }
+            }
+
+            int hitCount = Physics.OverlapBoxNonAlloc(
+                center,
+                halfExtents,
+                overlapBuffer,
+                rotation,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider other = overlapBuffer[i];
+                overlapBuffer[i] = null;
+
+                if (other == null || other == cachedCollider)
+                {
+                    continue;
+                }
+
+                if (other.transform.IsChildOf(transform))
+                {
+                    continue;
+                }
+
+                overlapScratch.Add(other);
+
+                if (!notifyNewContacts || activeOverlaps.Contains(other))
+                {
+                    continue;
+                }
+                EmitImpactForCollider(other);
+            }
+
+            activeOverlaps.Clear();
+            foreach (Collider overlap in overlapScratch)
+            {
+                activeOverlaps.Add(overlap);
+            }
+
+            lastProbeCenter = center;
+            lastProbeRotation = rotation;
+            hasLastProbePose = true;
+        }
+
+        private Vector3 GetProbeHalfExtents()
+        {
+            Vector3 scaledSize = Vector3.Scale(cachedCollider.size, transform.lossyScale);
+            Vector3 inset = Vector3.one * Mathf.Max(0f, collisionProbeInset);
+            Vector3 halfExtents = (scaledSize * 0.5f) - inset;
+
+            halfExtents.x = Mathf.Max(0.001f, halfExtents.x);
+            halfExtents.y = Mathf.Max(0.001f, halfExtents.y);
+            halfExtents.z = Mathf.Max(0.001f, halfExtents.z);
+            return halfExtents;
+        }
+
+        private void EmitImpactForCollider(Collider other)
+        {
+            if (other == null)
+            {
+                return;
+            }
+
+            DiceRoller otherDie = other.GetComponentInParent<DiceRoller>();
+            ImpactAudioType impactType = otherDie != null && otherDie != this
+                ? ImpactAudioType.Dice
+                : ImpactAudioType.Table;
+
+            ImpactDetected?.Invoke(impactType, this);
         }
     }
 }

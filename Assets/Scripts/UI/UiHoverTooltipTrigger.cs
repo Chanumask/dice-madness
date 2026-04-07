@@ -1,3 +1,4 @@
+using DiceMadness.Core;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -18,6 +19,7 @@ namespace DiceMadness.UI
 
         public void OnPointerEnter(PointerEventData eventData)
         {
+            AudioManager.Instance?.PlayUIHover();
             presenter?.Show(tooltipTitle, tooltipBody, eventData.position);
         }
 

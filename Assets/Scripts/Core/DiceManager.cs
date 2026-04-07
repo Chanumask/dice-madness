@@ -32,10 +32,14 @@ namespace DiceMadness.Core
         [SerializeField] private float evaluationHeightOffset = -0.4f;
         [SerializeField] private float evaluationSpacing = 2.15f;
         [SerializeField] private float presentationLift = 0.18f;
+        [SerializeField] private float minTableImpactSfxInterval = 0.07f;
+        [SerializeField] private float minDiceImpactSfxInterval = 0.05f;
 
         private Vector3[] startPositions;
         private bool isRolling;
         private bool allowRollInput = true;
+        private float lastTableImpactSfxTime = float.NegativeInfinity;
+        private float lastDiceImpactSfxTime = float.NegativeInfinity;
 
         public event Action<RollOutcome> RollResolved;
 
@@ -49,7 +53,13 @@ namespace DiceMadness.Core
             }
 
             CacheStartTransforms();
+            RegisterDiceImpactCallbacks();
             ShowIdleText();
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterDiceImpactCallbacks();
         }
 
         private void Update()
@@ -63,9 +73,11 @@ namespace DiceMadness.Core
         // Lets the setup script assign scene references without manual inspector work.
         public void SetReferences(DiceRoller[] diceToManage, TMP_Text outputText)
         {
+            UnregisterDiceImpactCallbacks();
             dice = diceToManage;
             resultText = outputText;
             CacheStartTransforms();
+            RegisterDiceImpactCallbacks();
             ShowIdleText();
         }
 
@@ -118,6 +130,8 @@ namespace DiceMadness.Core
             }
 
             isRolling = true;
+            lastTableImpactSfxTime = float.NegativeInfinity;
+            lastDiceImpactSfxTime = float.NegativeInfinity;
             ShowRollingText();
 
             for (int i = 0; i < dice.Length; i++)
@@ -133,13 +147,11 @@ namespace DiceMadness.Core
 
             while (!AllRollAnimationsComplete())
             {
-                float deltaTime = Time.deltaTime;
-
                 for (int i = 0; i < dice.Length; i++)
                 {
                     if (dice[i] != null)
                     {
-                        dice[i].AdvanceOutcomeRoll(deltaTime);
+                        dice[i].AdvanceOutcomeRoll(Time.deltaTime);
                     }
                 }
 
@@ -198,6 +210,77 @@ namespace DiceMadness.Core
                 }
 
                 startPositions[i] = dice[i].transform.position;
+            }
+        }
+
+        private void RegisterDiceImpactCallbacks()
+        {
+            if (dice == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < dice.Length; i++)
+            {
+                if (dice[i] == null)
+                {
+                    continue;
+                }
+
+                dice[i].ImpactDetected -= HandleDiceImpactDetected;
+                dice[i].ImpactDetected += HandleDiceImpactDetected;
+            }
+        }
+
+        private void UnregisterDiceImpactCallbacks()
+        {
+            if (dice == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < dice.Length; i++)
+            {
+                if (dice[i] == null)
+                {
+                    continue;
+                }
+
+                dice[i].ImpactDetected -= HandleDiceImpactDetected;
+            }
+        }
+
+        private void HandleDiceImpactDetected(DiceRoller.ImpactAudioType impactType, DiceRoller sourceDie)
+        {
+            if (!isRolling)
+            {
+                return;
+            }
+
+            float now = Time.unscaledTime;
+
+            switch (impactType)
+            {
+                case DiceRoller.ImpactAudioType.Dice:
+                    if (now - lastDiceImpactSfxTime < minDiceImpactSfxInterval)
+                    {
+                        return;
+                    }
+
+                    lastDiceImpactSfxTime = now;
+                    AudioManager.Instance?.PlayDiceHitDice();
+                    break;
+
+                case DiceRoller.ImpactAudioType.Table:
+                default:
+                    if (now - lastTableImpactSfxTime < minTableImpactSfxInterval)
+                    {
+                        return;
+                    }
+
+                    lastTableImpactSfxTime = now;
+                    AudioManager.Instance?.PlayDiceHitTable();
+                    break;
             }
         }
 
